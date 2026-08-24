@@ -2,7 +2,7 @@
   "name": "ladex",
   "displayName": "Ladex — a bill of lading for AI",
   "description": "Inline AI governance: detects AI components as you type and flags what they obligate.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "publisher": "ladex",
   "license": "MIT",
   "repository": {

@@ -5,4 +5,4 @@ vector stores, inference APIs — captured at the moment the code is written, an
 CycloneDX ML-BOM with signed human attestations for the fields no scanner can derive.
 """
 
-__version__ = "0.0.0"
+__version__ = "0.1.0"
