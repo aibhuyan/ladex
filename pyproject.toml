@@ -22,7 +22,13 @@ dependencies = [
     "httpx>=0.27",
     "platformdirs>=4.0",
     "cyclonedx-python-lib>=8.0",
+    "cryptography>=42.0",
 ]
+
+[project.optional-dependencies]
+# Keyless signing via Sigstore (OIDC + Fulcio + Rekor). Opt-in: the default local Ed25519
+# signer needs no network or identity. `pip install ladex[sigstore]` enables the backend.
+sigstore = ["sigstore>=3.0"]
 
 [project.urls]
 Homepage = "https://ladex.dev"
@@ -71,7 +77,13 @@ exclude = ['tests/fixtures/']
 # lib IS installed with types (local runs), mypy still uses its real types; this only
 # silences the "missing stub" error in the sandbox, keeping that hook light.
 [[tool.mypy.overrides]]
-module = ["tree_sitter", "tree_sitter_python", "httpx", "platformdirs"]
+module = [
+    "tree_sitter",
+    "tree_sitter_python",
+    "httpx",
+    "platformdirs",
+    "cryptography.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -49,6 +49,10 @@ def main(argv: list[str] | None = None) -> int:
         return _scan_command(args[1:])
     if args[0] == "policy":
         return _policy_command(args[1:])
+    if args[0] == "attest":
+        return _attest_command(args[1:])
+    if args[0] == "verify":
+        return _verify_command(args[1:])
     if args[0] == "taxonomy":
         return _taxonomy_command(args[1:])
     if args[0] == "detect":
@@ -100,11 +104,13 @@ def _scan_command(args: list[str]) -> int:
         enrichment = enrich_scan(result, offline=offline, hf_token=hf_token)
 
     if write_bom:
+        from ladex.engine.attest import AttestationStore
         from ladex.engine.bom import build_bom, render_json
         from ladex.engine.policy import check_scan
 
         policy = check_scan(result)
-        bom = build_bom(result, enrichment=enrichment, policy=policy)
+        attestations = AttestationStore.for_root(root).load()
+        bom = build_bom(result, enrichment=enrichment, policy=policy, attestations=attestations)
         bom_path.write_text(render_json(bom), encoding="utf-8")
         print(f"wrote {bom_path} ({len(result.detections)} detection(s))")
         return 0
@@ -202,6 +208,103 @@ def _policy_check(args: list[str]) -> int:
         render_policy(report)
     # Informational for now; the CI gate on open gaps turns on with attestation (Step 7).
     return 0
+
+
+def _attest_command(args: list[str]) -> int:
+    if not args or args[0] in {"-h", "--help"}:
+        print(
+            "usage: ladex attest SUBJECT --claim provenance --value TEXT [--attester WHO]\n"
+            "                    [--path DIR]\n"
+            "  SUBJECT is a model id (e.g. sentence-transformers/all-MiniLM-L6-v2).",
+            file=sys.stderr,
+        )
+        return 0 if args else 2
+
+    from ladex.engine.attest import (
+        ATTESTABLE_CLAIMS,
+        AttestationStore,
+        create_attestation,
+        get_signer,
+    )
+
+    positional = [a for a in args if not a.startswith("-")]
+    consumed = {
+        v
+        for v in (
+            _flag_value(args, "--claim"),
+            _flag_value(args, "--value"),
+            _flag_value(args, "--attester"),
+            _flag_value(args, "--path"),
+        )
+        if v
+    }
+    positional = [p for p in positional if p not in consumed]
+    if not positional:
+        print("attest requires a SUBJECT (model id)", file=sys.stderr)
+        return 2
+    subject = positional[0]
+    claim = _flag_value(args, "--claim") or "provenance"
+    if claim not in ATTESTABLE_CLAIMS:
+        print(f"unknown claim {claim!r}; choose from {list(ATTESTABLE_CLAIMS)}", file=sys.stderr)
+        return 2
+    value = _flag_value(args, "--value")
+    if value is None:
+        print("attest requires --value (the declaration text)", file=sys.stderr)
+        return 2
+    attester = _flag_value(args, "--attester") or _git_email() or "unknown"
+    root = Path(_flag_value(args, "--path") or ".")
+
+    signer = get_signer("local")
+    attestation = create_attestation(subject, claim, value, attester, signer)
+    AttestationStore.for_root(root).add(attestation)
+    print(
+        f"attested {claim} for {subject}\n"
+        f"  signed by {attester} (keyid {attestation.keyid}, {signer.__class__.__name__})\n"
+        f"  stored in {root / '.ladex' / 'attestations.json'}"
+    )
+    return 0
+
+
+def _verify_command(args: list[str]) -> int:
+    if args and args[0] in {"-h", "--help"}:
+        print("usage: ladex verify [PATH]", file=sys.stderr)
+        return 0
+
+    from ladex.engine.attest import AttestationStore, verify_attestation
+
+    positional = [a for a in args if not a.startswith("-")]
+    root = Path(positional[0]) if positional else Path(".")
+    attestations = AttestationStore.for_root(root).load()
+    if not attestations:
+        print("no attestations found.")
+        return 0
+
+    ok = 0
+    for att in attestations:
+        valid = verify_attestation(att)
+        ok += valid
+        mark = "OK  " if valid else "FAIL"
+        print(f"  [{mark}] {att.subject}  {att.claim}  <- {att.attester}")
+    bad = len(attestations) - ok
+    print(f"\n{ok} valid, {bad} invalid attestation(s).")
+    return 0 if bad == 0 else 1
+
+
+def _git_email() -> str | None:
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "config", "user.email"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    email = out.stdout.strip()
+    return email or None
 
 
 def _detect_command(args: list[str]) -> int:

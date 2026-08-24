@@ -18,7 +18,9 @@ Honest gaps are carried into the artifact: every model records ``ladex:provenanc
 
 from __future__ import annotations
 
+import json
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from cyclonedx.contrib.license.factories import LicenseFactory
@@ -30,6 +32,8 @@ from cyclonedx.schema import OutputFormat, SchemaVersion
 from packageurl import PackageURL
 
 from ladex import __version__
+from ladex.engine.attest.service import verify_attestation
+from ladex.engine.attest.store import Attestation
 from ladex.engine.enrich.models import EnrichedModel, EnrichedPackage, EnrichmentReport
 from ladex.engine.enrich.pypi import module_to_distribution
 from ladex.engine.policy.report import PolicyReport
@@ -56,6 +60,7 @@ def build_bom(
     *,
     enrichment: EnrichmentReport | None = None,
     policy: PolicyReport | None = None,
+    attestations: Sequence[Attestation] | None = None,
     project_name: str | None = None,
 ) -> Bom:
     """Assemble a deterministic CycloneDX BOM describing the AI cargo in a scan."""
@@ -70,12 +75,14 @@ def build_bom(
 
     pkg_enrich = enrichment.packages if enrichment else {}
     model_enrich = enrichment.models if enrichment else {}
+    # Only signatures that actually verify may fill a gap — honest gaps to the last step.
+    attested = {(a.subject, a.claim): a for a in (attestations or ()) if verify_attestation(a)}
 
     for dist, entry in sorted(_package_index(result).items()):
         _add_package_component(bom, dist, entry, pkg_enrich.get(dist))
 
     for model_id in _model_ids(result):
-        _add_model_component(bom, model_id, model_enrich.get(model_id))
+        _add_model_component(bom, model_id, model_enrich.get(model_id), attested)
 
     # Root depends on every detected component, completing the dependency graph.
     bom.register_dependency(root, list(bom.components))
@@ -145,7 +152,12 @@ def _add_package_component(
     bom.components.add(comp)
 
 
-def _add_model_component(bom: Bom, model_id: str, enriched: EnrichedModel | None) -> None:
+def _add_model_component(
+    bom: Bom,
+    model_id: str,
+    enriched: EnrichedModel | None,
+    attested: dict[tuple[str, str], Attestation],
+) -> None:
     comp = Component(
         name=model_id,
         type=ComponentType.MACHINE_LEARNING_MODEL,
@@ -162,11 +174,17 @@ def _add_model_component(bom: Bom, model_id: str, enriched: EnrichedModel | None
                 url=XsUri(f"https://huggingface.co/{model_id}"),
             )
         )
-    # Honest gaps recorded in the artifact itself — filled by attestation in Step 7.
-    provenance = enriched.provenance if enriched else "UNDOCUMENTED"
-    consent = enriched.consent_basis if enriched else "UNDOCUMENTED"
-    comp.properties.add(Property(name=f"{_PROP}provenance", value=provenance))
-    comp.properties.add(Property(name=f"{_PROP}consent_basis", value=consent))
+    # A verified attestation fills the gap; otherwise it stays UNDOCUMENTED. Never a fake value.
+    for claim in ("provenance", "consent_basis"):
+        att = attested.get((model_id, claim))
+        if att is not None:
+            comp.properties.add(Property(name=f"{_PROP}{claim}", value=att.value))
+            comp.properties.add(Property(name=f"{_PROP}{claim}.attester", value=att.attester))
+            comp.properties.add(
+                Property(name=f"{_PROP}{claim}.attestation", value=json.dumps(att.envelope))
+            )
+        else:
+            comp.properties.add(Property(name=f"{_PROP}{claim}", value="UNDOCUMENTED"))
     bom.components.add(comp)
 
 
