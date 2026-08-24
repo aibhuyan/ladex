@@ -5,6 +5,7 @@ and a richer CLI (typer/rich) land. For now it exposes taxonomy inspection so St
 runnable and verifiable:
 
     ladex --version
+    ladex scan [PATH] [--json]
     ladex taxonomy validate [PACK.yaml ...]
     ladex taxonomy list
     ladex detect FILE.py
@@ -12,11 +13,13 @@ runnable and verifiable:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 from ladex import __version__
 from ladex.engine.detect import PythonDetector
+from ladex.engine.scan import scan_path
 from ladex.engine.taxonomy import (
     AttributeMatch,
     CallMatch,
@@ -41,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     if args[0] in _VERSION_FLAGS:
         print(f"ladex {__version__}")
         return 0
+    if args[0] == "scan":
+        return _scan_command(args[1:])
     if args[0] == "taxonomy":
         return _taxonomy_command(args[1:])
     if args[0] == "detect":
@@ -52,8 +57,31 @@ def main(argv: list[str] | None = None) -> int:
 
 def _print_banner() -> None:
     print(f"ladex {__version__} — a bill of lading for AI")
-    print("Commands: `ladex taxonomy validate`, `ladex taxonomy list`, `ladex detect FILE`.")
-    print("`ladex scan` arrives in Step 3.")
+    print("Commands: `ladex scan [PATH]`, `ladex detect FILE`, `ladex taxonomy list`.")
+
+
+def _scan_command(args: list[str]) -> int:
+    if args and args[0] in {"-h", "--help"}:
+        print("usage: ladex scan [PATH] [--json]", file=sys.stderr)
+        return 0
+    as_json = "--json" in args
+    positional = [a for a in args if not a.startswith("-")]
+    root = Path(positional[0]) if positional else Path(".")
+    if not root.exists():
+        print(f"path does not exist: {root}", file=sys.stderr)
+        return 2
+
+    # Import rendering lazily so `--json` needs no rich formatting path.
+    from ladex.cli.report import render_scan, scan_to_dict
+
+    result = scan_path(root)
+    if as_json:
+        print(json.dumps(scan_to_dict(result), indent=2))
+    else:
+        render_scan(result)
+    # `scan` is informational: presence of AI is not a failure. Gating on obligations
+    # and gaps is the policy layer's job (Step 5).
+    return 0
 
 
 def _detect_command(args: list[str]) -> int:

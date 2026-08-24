@@ -12,7 +12,7 @@ repos:
     rev: v1.11.2
     hooks:
       - id: mypy
-        additional_dependencies: [pytest>=8.3, pydantic>=2.7, types-PyYAML>=6.0]
+        additional_dependencies: [pytest>=8.3, pydantic>=2.7, types-PyYAML>=6.0, rich>=13.7]
         args: [--strict]
         files: ^(src|tests)/
         exclude: ^tests/fixtures/
