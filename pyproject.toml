@@ -16,6 +16,8 @@ keywords = ["aibom", "ml-bom", "cyclonedx", "eu-ai-act", "ai-governance", "sbom"
 dependencies = [
     "pydantic>=2.7",
     "pyyaml>=6.0",
+    "tree-sitter>=0.23",
+    "tree-sitter-python>=0.23",
 ]
 
 [project.urls]
@@ -45,6 +47,8 @@ packages = ["src/ladex"]
 target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
+# Detection fixtures deliberately contain broken / non-idiomatic code — never lint them.
+extend-exclude = ["tests/fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
@@ -54,6 +58,13 @@ python_version = "3.12"
 strict = true
 files = ["src", "tests"]
 plugins = ["pydantic.mypy"]
+exclude = ['tests/fixtures/']
+
+# tree-sitter / tree-sitter-python ship no usable stubs in the isolated pre-commit mypy
+# sandbox; treat their symbols as untyped rather than installing them into that sandbox.
+[[tool.mypy.overrides]]
+module = ["tree_sitter", "tree_sitter_python"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

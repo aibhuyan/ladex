@@ -7,6 +7,7 @@ runnable and verifiable:
     ladex --version
     ladex taxonomy validate [PACK.yaml ...]
     ladex taxonomy list
+    ladex detect FILE.py
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import sys
 from pathlib import Path
 
 from ladex import __version__
+from ladex.engine.detect import PythonDetector
 from ladex.engine.taxonomy import (
     AttributeMatch,
     CallMatch,
@@ -41,6 +43,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args[0] == "taxonomy":
         return _taxonomy_command(args[1:])
+    if args[0] == "detect":
+        return _detect_command(args[1:])
     print(f"ladex {__version__} — a bill of lading for AI")
     print(f"unknown command: {args[0]!r}. Try 'ladex taxonomy list'.", file=sys.stderr)
     return 2
@@ -48,8 +52,25 @@ def main(argv: list[str] | None = None) -> int:
 
 def _print_banner() -> None:
     print(f"ladex {__version__} — a bill of lading for AI")
-    print("Commands: `ladex taxonomy validate`, `ladex taxonomy list`.")
+    print("Commands: `ladex taxonomy validate`, `ladex taxonomy list`, `ladex detect FILE`.")
     print("`ladex scan` arrives in Step 3.")
+
+
+def _detect_command(args: list[str]) -> int:
+    if not args or args[0] in {"-h", "--help"}:
+        print("usage: ladex detect FILE.py", file=sys.stderr)
+        return 0 if args else 2
+    target = Path(args[0])
+    if not target.is_file():
+        print(f"not a file: {target}", file=sys.stderr)
+        return 2
+    detections = PythonDetector().detect_file(target)
+    if not detections:
+        return 0  # ruthless silence: nothing AI-relevant, say nothing
+    for d in detections:
+        print(f"{d.location():<28} {d.component_type.value:<15} {d.rule_id:<28} {d.evidence}")
+    print(f"\n{len(detections)} detection(s).")
+    return 0
 
 
 def _taxonomy_command(args: list[str]) -> int:
