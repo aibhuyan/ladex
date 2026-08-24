@@ -18,7 +18,7 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://ladex.dev"
-Repository = "https://github.com/duskyvesper/ladex"
+Repository = "https://github.com/aibhuyan/ladex"
 
 [project.scripts]
 ladex = "ladex.cli:main"
