@@ -1,0 +1,57 @@
+{
+  "name": "ladex",
+  "displayName": "Ladex — a bill of lading for AI",
+  "description": "Inline AI governance: detects AI components as you type and flags what they obligate.",
+  "version": "0.0.0",
+  "publisher": "ladex",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aibhuyan/ladex"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Ladex",
+      "properties": {
+        "ladex.serverCommand": {
+          "type": "string",
+          "default": "ladex",
+          "description": "Command that launches the Ladex engine (must support `serve`)."
+        },
+        "ladex.serverArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "serve"
+          ],
+          "description": "Arguments passed to the server command."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -53,6 +53,8 @@ def main(argv: list[str] | None = None) -> int:
         return _attest_command(args[1:])
     if args[0] == "verify":
         return _verify_command(args[1:])
+    if args[0] == "serve":
+        return _serve_command(args[1:])
     if args[0] == "taxonomy":
         return _taxonomy_command(args[1:])
     if args[0] == "detect":
@@ -288,6 +290,16 @@ def _verify_command(args: list[str]) -> int:
     bad = len(attestations) - ok
     print(f"\n{ok} valid, {bad} invalid attestation(s).")
     return 0 if bad == 0 else 1
+
+
+def _serve_command(args: list[str]) -> int:
+    if args and args[0] in {"-h", "--help"}:
+        print("usage: ladex serve   (runs the LSP server over stdio)", file=sys.stderr)
+        return 0
+    from ladex.engine.server import start_stdio
+
+    start_stdio()
+    return 0
 
 
 def _git_email() -> str | None:
