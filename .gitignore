@@ -36,3 +36,6 @@ node_modules/
 
 # Personal learning notes (never committed)
 notes/
+
+# Project context / constitution — kept local, not committed
+CLAUDE.md
