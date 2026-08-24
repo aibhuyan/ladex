@@ -47,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args[0] == "scan":
         return _scan_command(args[1:])
+    if args[0] == "policy":
+        return _policy_command(args[1:])
     if args[0] == "taxonomy":
         return _taxonomy_command(args[1:])
     if args[0] == "detect":
@@ -116,6 +118,79 @@ def _flag_value(args: list[str], flag: str) -> str | None:
         if idx + 1 < len(args):
             return args[idx + 1]
     return None
+
+
+def _tristate(args: list[str], yes: str, no: str) -> bool | None:
+    if yes in args:
+        return True
+    if no in args:
+        return False
+    return None
+
+
+def _policy_command(args: list[str]) -> int:
+    if not args or args[0] in {"-h", "--help"}:
+        print(
+            "usage: ladex policy {check|list} [PATH] [--json]\n"
+            "  project facts: --user-facing/--not-user-facing, "
+            "--synthetic-content/--no-synthetic-content",
+            file=sys.stderr,
+        )
+        return 0 if args else 2
+    sub, rest = args[0], args[1:]
+    if sub == "list":
+        return _policy_list()
+    if sub == "check":
+        return _policy_check(rest)
+    print(f"unknown policy subcommand: {sub!r}", file=sys.stderr)
+    return 2
+
+
+def _policy_list() -> int:
+    from ladex.engine.policy import PolicyError, load_builtin_bundles
+
+    try:
+        bundles = load_builtin_bundles()
+    except PolicyError as exc:
+        print(f"INVALID: {exc}", file=sys.stderr)
+        return 1
+    for bundle in bundles:
+        print(f"{bundle.id} ({bundle.regulation}) v{bundle.version}: {len(bundle.rules)} rule(s)")
+        for rule in bundle.rules:
+            print(f"  - {rule.citation:<10} {rule.id}  [{rule.verification.value}]")
+    return 0
+
+
+def _policy_check(args: list[str]) -> int:
+    from ladex.cli.report import policy_to_dict, render_policy
+    from ladex.engine.policy import PolicyError, ProjectContext, check_scan
+
+    as_json = "--json" in args
+    project = ProjectContext(
+        user_facing=_tristate(args, "--user-facing", "--not-user-facing"),
+        generates_synthetic_content=_tristate(
+            args, "--synthetic-content", "--no-synthetic-content"
+        ),
+    )
+    positional = [a for a in args if not a.startswith("-")]
+    root = Path(positional[0]) if positional else Path(".")
+    if not root.exists():
+        print(f"path does not exist: {root}", file=sys.stderr)
+        return 2
+
+    try:
+        result = scan_path(root)
+        report = check_scan(result, project)
+    except PolicyError as exc:
+        print(f"INVALID: {exc}", file=sys.stderr)
+        return 1
+
+    if as_json:
+        print(json.dumps(policy_to_dict(report), indent=2))
+    else:
+        render_policy(report)
+    # Informational for now; the CI gate on open gaps turns on with attestation (Step 7).
+    return 0
 
 
 def _detect_command(args: list[str]) -> int:

@@ -1,0 +1,42 @@
+# Ladex policy bundle — EU AI Act, Article 50 (transparency obligations).
+# Versioned data: update obligations here without shipping a new binary.
+#
+# Article 50 governs TRANSPARENCY. Its triggers are not derivable from imports alone —
+# whether a system is "user-facing" or "generates synthetic content" is a project fact the
+# developer declares. So these rules condition on `project.*` and mark compliance as
+# `requires_attestation`: a scanner can see you use an inference API, but only a human can
+# confirm the end-user is actually told they are talking to an AI.
+schema_version: 1
+id: eu-ai-act-art-50
+regulation: EU AI Act
+version: 0.1.0
+rules:
+  - id: art-50-1-ai-interaction-disclosure
+    title: Disclose AI interaction to users
+    citation: Art. 50(1)
+    obligation: >-
+      Systems intended to interact directly with natural persons must inform those persons
+      that they are interacting with an AI system, unless it is obvious from context.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      component_type: [inference_api, agent_framework]
+      project:
+        user_facing: true
+    references:
+      - "https://artificialintelligenceact.eu/article/50/"
+
+  - id: art-50-2-synthetic-content-marking
+    title: Mark AI-generated content as artificial
+    citation: Art. 50(2)
+    obligation: >-
+      Providers of generative AI systems must ensure outputs are marked in a
+      machine-readable format and detectable as artificially generated or manipulated.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      component_type: [inference_api, model, model_loader]
+      project:
+        generates_synthetic_content: true
+    references:
+      - "https://artificialintelligenceact.eu/article/50/"

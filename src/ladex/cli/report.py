@@ -11,6 +11,8 @@ from rich.markup import escape
 from ladex.engine.detect import Detection
 from ladex.engine.enrich import EnrichmentReport
 from ladex.engine.enrich.models import EnrichedModel, EnrichedPackage
+from ladex.engine.policy import Obligation, PolicyReport
+from ladex.engine.policy.report import ObligationStatus
 from ladex.engine.scan import ScanResult
 
 _TYPE_STYLE: dict[str, str] = {
@@ -24,6 +26,12 @@ _TYPE_STYLE: dict[str, str] = {
 }
 
 _EVIDENCE_MAX = 48
+
+# Project-context fact -> the CLI flags that declare it (yes / no).
+_PROJECT_FLAGS: dict[str, tuple[str, str]] = {
+    "user_facing": ("--user-facing", "--not-user-facing"),
+    "generates_synthetic_content": ("--synthetic-content", "--no-synthetic-content"),
+}
 
 
 def render_scan(result: ScanResult, console: Console | None = None) -> None:
@@ -126,6 +134,53 @@ def _render_model(model: EnrichedModel) -> list[str]:
     return [head, gaps]
 
 
+def render_policy(report: PolicyReport, console: Console | None = None) -> None:
+    """Print obligations grouped by status, with derivable vs attestation gaps marked."""
+    console = console or Console()
+    if not report.obligations:
+        console.print("[dim]No EU AI Act obligations triggered by detected components.[/dim]")
+        return
+
+    if report.applies:
+        console.print("[bold]Obligations (apply)[/bold]")
+        for ob in report.applies:
+            for line in _render_obligation(ob):
+                console.print(line)
+
+    if report.potential:
+        console.print("\n[bold]Obligations (may apply - declare project facts)[/bold]")
+        for ob in report.potential:
+            for line in _render_obligation(ob):
+                console.print(line)
+
+    n_gaps = len(report.gaps)
+    console.print(
+        f"\n[bold]Policy:[/bold] {len(report.applies)} applies, "
+        f"{len(report.potential)} potential, "
+        f"[yellow]{n_gaps} gap(s) needing attestation[/yellow]."
+    )
+
+
+def _render_obligation(ob: Obligation) -> list[str]:
+    badge = (
+        "[red]APPLIES[/red]" if ob.status is ObligationStatus.APPLIES else "[yellow]MAYBE[/yellow]"
+    )
+    verify = (
+        "[yellow]requires attestation[/yellow]" if ob.is_gap else "[green]auto-verifiable[/green]"
+    )
+    lines = [
+        f"\n  {badge}  [bold]{escape(ob.citation)}[/bold] {escape(ob.title)}  ({verify})",
+        f"    {escape(ob.obligation.strip())}",
+        f"    [dim]triggered by: {escape(', '.join(ob.components))}[/dim]",
+    ]
+    if ob.unresolved:
+        keys = ", ".join(ob.unresolved)
+        yes, no = _PROJECT_FLAGS.get(ob.unresolved[0], ("", ""))
+        hint = f" [dim](declare with {yes} / {no})[/dim]" if yes else ""
+        lines.append(f"    [yellow]unresolved:[/yellow] {escape(keys)}{hint}")
+    return lines
+
+
 def _truncate(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 3] + "..."
 
@@ -204,4 +259,32 @@ def enrichment_to_dict(report: EnrichmentReport) -> dict[str, Any]:
             }
             for repo_id, model in report.models.items()
         },
+    }
+
+
+def policy_to_dict(report: PolicyReport) -> dict[str, Any]:
+    """Serialize a policy report to a plain dict for ``--json`` output."""
+    return {
+        "summary": {
+            "applies": len(report.applies),
+            "potential": len(report.potential),
+            "gaps": len(report.gaps),
+        },
+        "obligations": [
+            {
+                "rule_id": ob.rule_id,
+                "regulation": ob.regulation,
+                "citation": ob.citation,
+                "title": ob.title,
+                "obligation": ob.obligation.strip(),
+                "verification": ob.verification.value,
+                "severity": ob.severity.value,
+                "status": ob.status.value,
+                "is_gap": ob.is_gap,
+                "components": list(ob.components),
+                "unresolved": list(ob.unresolved),
+                "references": list(ob.references),
+            }
+            for ob in report.obligations
+        ],
     }
