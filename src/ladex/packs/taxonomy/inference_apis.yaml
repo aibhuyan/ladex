@@ -1,0 +1,73 @@
+# Ladex taxonomy pack — hosted inference APIs (OpenAI, Anthropic).
+# Rules classify code signals; obligations are decided later by the policy layer.
+schema_version: 1
+name: inference_apis
+version: 0.1.0
+rules:
+  # --- OpenAI ---
+  - id: openai.import
+    name: OpenAI SDK import
+    component_type: inference_api
+    provider: OpenAI
+    description: The application imports the OpenAI Python SDK.
+    match: { kind: import, module: openai }
+    tags: [hosted, closed-weights]
+    references: ["https://platform.openai.com/docs/libraries"]
+
+  - id: openai.client
+    name: OpenAI client construction
+    component_type: inference_api
+    provider: OpenAI
+    description: A synchronous OpenAI API client is constructed.
+    match: { kind: call, target: openai.OpenAI }
+    tags: [hosted, closed-weights]
+
+  - id: openai.async-client
+    name: Async OpenAI client construction
+    component_type: inference_api
+    provider: OpenAI
+    description: An asynchronous OpenAI API client is constructed.
+    match: { kind: call, target: openai.AsyncOpenAI }
+    tags: [hosted, closed-weights]
+
+  - id: openai.model-id
+    name: OpenAI model identifier
+    component_type: model
+    provider: OpenAI
+    description: A string literal names a known OpenAI model family.
+    match: { kind: string, pattern: "^(gpt-4o|gpt-4|gpt-3\\.5|o1|o3)([.-].*)?$" }
+    tags: [hosted, closed-weights]
+
+  # --- Anthropic ---
+  - id: anthropic.import
+    name: Anthropic SDK import
+    component_type: inference_api
+    provider: Anthropic
+    description: The application imports the Anthropic Python SDK.
+    match: { kind: import, module: anthropic }
+    tags: [hosted, closed-weights]
+    references: ["https://docs.anthropic.com/en/api/client-sdks"]
+
+  - id: anthropic.client
+    name: Anthropic client construction
+    component_type: inference_api
+    provider: Anthropic
+    description: A synchronous Anthropic API client is constructed.
+    match: { kind: call, target: anthropic.Anthropic }
+    tags: [hosted, closed-weights]
+
+  - id: anthropic.async-client
+    name: Async Anthropic client construction
+    component_type: inference_api
+    provider: Anthropic
+    description: An asynchronous Anthropic API client is constructed.
+    match: { kind: call, target: anthropic.AsyncAnthropic }
+    tags: [hosted, closed-weights]
+
+  - id: anthropic.model-id
+    name: Anthropic model identifier
+    component_type: model
+    provider: Anthropic
+    description: A string literal names a Claude model.
+    match: { kind: string, pattern: "^claude-[a-z0-9.-]+$" }
+    tags: [hosted, closed-weights]

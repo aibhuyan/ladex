@@ -1,0 +1,46 @@
+# Ladex taxonomy pack — agent / orchestration frameworks (LangChain family).
+schema_version: 1
+name: frameworks
+version: 0.1.0
+rules:
+  - id: langchain.import
+    name: LangChain import
+    component_type: agent_framework
+    provider: LangChain
+    description: The application imports the core LangChain package.
+    match: { kind: import, module: langchain }
+    tags: [orchestration]
+    references: ["https://python.langchain.com/"]
+
+  - id: langchain.core-import
+    name: LangChain Core import
+    component_type: agent_framework
+    provider: LangChain
+    description: The application imports langchain-core primitives.
+    match: { kind: import, module: langchain_core }
+    tags: [orchestration]
+
+  - id: langchain.community-import
+    name: LangChain Community import
+    component_type: agent_framework
+    provider: LangChain
+    description: The application imports third-party integrations from langchain-community.
+    match: { kind: import, module: langchain_community }
+    tags: [orchestration, integrations]
+
+  - id: langchain.openai-integration
+    name: LangChain OpenAI integration import
+    component_type: agent_framework
+    provider: LangChain
+    description: LangChain is wired to OpenAI via the langchain-openai integration.
+    match: { kind: import, module: langchain_openai }
+    tags: [orchestration, integrations]
+
+  - id: langgraph.import
+    name: LangGraph import
+    component_type: agent_framework
+    provider: LangChain
+    description: The application imports LangGraph for stateful agent graphs.
+    match: { kind: import, module: langgraph }
+    tags: [orchestration, agents]
+    references: ["https://langchain-ai.github.io/langgraph/"]

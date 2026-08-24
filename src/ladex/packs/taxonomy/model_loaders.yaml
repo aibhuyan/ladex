@@ -1,0 +1,66 @@
+# Ladex taxonomy pack — model loaders (Hugging Face Transformers + Hub).
+# These signals are where local/open-weight models enter a codebase — the point at which
+# training-data provenance becomes an UNDOCUMENTED field requiring human attestation.
+schema_version: 1
+name: model_loaders
+version: 0.1.0
+rules:
+  # --- transformers ---
+  - id: transformers.import
+    name: Transformers import
+    component_type: model_loader
+    provider: Hugging Face
+    description: The application imports the Hugging Face Transformers library.
+    match: { kind: import, module: transformers }
+    tags: [open-weights, local]
+    references: ["https://huggingface.co/docs/transformers"]
+
+  - id: transformers.pipeline
+    name: Transformers pipeline construction
+    component_type: model_loader
+    provider: Hugging Face
+    description: A high-level Transformers pipeline is constructed, loading a model.
+    match: { kind: call, target: transformers.pipeline }
+    tags: [open-weights, local]
+
+  - id: transformers.automodel-from-pretrained
+    name: AutoModel.from_pretrained
+    component_type: model_loader
+    provider: Hugging Face
+    description: A pretrained model is loaded via AutoModel.from_pretrained.
+    match: { kind: call, target: transformers.AutoModel.from_pretrained }
+    tags: [open-weights, local, provenance-unknown]
+
+  # --- huggingface_hub ---
+  - id: huggingface-hub.import
+    name: Hugging Face Hub import
+    component_type: model_loader
+    provider: Hugging Face
+    description: The application imports the huggingface_hub client.
+    match: { kind: import, module: huggingface_hub }
+    tags: [open-weights]
+    references: ["https://huggingface.co/docs/huggingface_hub"]
+
+  - id: huggingface-hub.hf-hub-download
+    name: hf_hub_download
+    component_type: model_loader
+    provider: Hugging Face
+    description: A single file (often model weights) is downloaded from the Hub.
+    match: { kind: call, target: huggingface_hub.hf_hub_download }
+    tags: [open-weights, provenance-unknown]
+
+  - id: huggingface-hub.snapshot-download
+    name: snapshot_download
+    component_type: model_loader
+    provider: Hugging Face
+    description: A full model repository snapshot is downloaded from the Hub.
+    match: { kind: call, target: huggingface_hub.snapshot_download }
+    tags: [open-weights, provenance-unknown]
+
+  - id: huggingface.sentence-transformers-id
+    name: sentence-transformers model id
+    component_type: model
+    provider: Hugging Face
+    description: A string literal names a sentence-transformers model repository.
+    match: { kind: string, pattern: "^sentence-transformers/[\\w.-]+$" }
+    tags: [open-weights, embeddings]

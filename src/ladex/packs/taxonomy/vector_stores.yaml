@@ -1,0 +1,37 @@
+# Ladex taxonomy pack — vector stores (Pinecone).
+schema_version: 1
+name: vector_stores
+version: 0.1.0
+rules:
+  - id: pinecone.import
+    name: Pinecone import
+    component_type: vector_store
+    provider: Pinecone
+    description: The application imports the Pinecone client.
+    match: { kind: import, module: pinecone }
+    tags: [hosted, retrieval]
+    references: ["https://docs.pinecone.io/reference/python-sdk"]
+
+  - id: pinecone.client
+    name: Pinecone client construction
+    component_type: vector_store
+    provider: Pinecone
+    description: A Pinecone client is constructed (v3+ SDK).
+    match: { kind: call, target: pinecone.Pinecone }
+    tags: [hosted, retrieval]
+
+  - id: pinecone.init
+    name: Pinecone legacy init
+    component_type: vector_store
+    provider: Pinecone
+    description: The legacy pinecone.init() entrypoint is called.
+    match: { kind: call, target: pinecone.init }
+    tags: [hosted, retrieval, legacy]
+
+  - id: pinecone.index
+    name: Pinecone Index access
+    component_type: vector_store
+    provider: Pinecone
+    description: A Pinecone Index handle is accessed.
+    match: { kind: attribute, target: pinecone.Index }
+    tags: [hosted, retrieval]

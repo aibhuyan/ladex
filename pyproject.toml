@@ -9,12 +9,14 @@ license-files = ["LICENSE"]
 authors = [{ name = "aibhuyan", email = "bhuyanalimrans@gmail.com" }]
 keywords = ["aibom", "ml-bom", "cyclonedx", "eu-ai-act", "ai-governance", "sbom"]
 
-# Runtime deps are intentionally empty at Step 0.
-# They get added per-step, honestly, as each layer lands:
+# Runtime deps grow per-step, honestly, as each layer lands:
 #   Step 1: pyyaml, pydantic        Step 2: tree-sitter, tree-sitter-python
 #   Step 3: typer/rich              Step 4: httpx, platformdirs
 #   Step 5: opa (shell-out)         Step 6: cyclonedx-python-lib  ... etc.
-dependencies = []
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+]
 
 [project.urls]
 Homepage = "https://ladex.dev"
@@ -29,6 +31,7 @@ dev = [
     "mypy>=1.11",
     "pytest>=8.3",
     "pre-commit>=3.8",
+    "types-PyYAML>=6.0",
 ]
 
 [build-system]
@@ -50,6 +53,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
 python_version = "3.12"
 strict = true
 files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
