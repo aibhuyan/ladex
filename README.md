@@ -1,4 +1,9 @@
-<h1 align="center">Ladex</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/ladex-lockup-dark.png">
+    <img src="assets/ladex-lockup-light.png" alt="Ladex" width="360">
+  </picture>
+</p>
 
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
