@@ -1,0 +1,41 @@
+# Kubernetes fixture: an exposed inference service and a GPU workload with an unsigned image.
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-inference
+  labels:
+    app: llm-inference
+spec:
+  type: LoadBalancer
+  selector:
+    app: llm-inference
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-server
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: server
+          image: myregistry/llm-server:latest
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+---
+# A pinned-by-digest, non-GPU workload -> must stay silent.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          image: myregistry/web@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

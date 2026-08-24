@@ -1,0 +1,59 @@
+# Ladex IaC rule catalog — Terraform + Kubernetes AI infrastructure.
+#
+# Structural matching for these rules lives in engine/detect/iac.py (each `id` maps to a
+# check function); this catalog carries the versioned *metadata* — wording, severity,
+# component classification — so findings can be re-worded / re-graded without a new binary.
+schema_version: 1
+name: iac
+version: 0.1.0
+rules:
+  # --- Terraform: detection ---
+  - id: iac.tf.gpu-node-pool
+    name: GPU node pool
+    kind: terraform
+    component_type: gpu_compute
+    severity: info
+    finding: A GPU-accelerated compute pool is provisioned (AI training/inference capacity).
+    tags: [compute, gpu]
+
+  - id: iac.tf.inference-endpoint
+    name: Managed inference endpoint
+    kind: terraform
+    component_type: inference_endpoint
+    severity: info
+    finding: A managed model inference endpoint is provisioned.
+    tags: [serving]
+
+  # --- Terraform: governance findings ---
+  - id: iac.tf.vector-store-unencrypted
+    name: Unencrypted vector store
+    kind: terraform
+    component_type: vector_store
+    severity: high
+    finding: Vector store is not encrypted at rest (encrypt_at_rest disabled or absent).
+    tags: [encryption, data-at-rest]
+
+  - id: iac.tf.missing-data-residency-tag
+    name: Missing data-residency tag
+    kind: terraform
+    component_type: gpu_compute
+    severity: medium
+    finding: AI resource has no data_residency tag; deployment region/jurisdiction is undeclared.
+    tags: [data-residency, tagging]
+
+  # --- Kubernetes: governance findings ---
+  - id: iac.k8s.public-inference-no-auth
+    name: Public inference endpoint without auth
+    kind: kubernetes
+    component_type: inference_endpoint
+    severity: high
+    finding: Inference Service is exposed via LoadBalancer with no authentication annotation.
+    tags: [exposure, auth]
+
+  - id: iac.k8s.gpu-unsigned-model-image
+    name: Unsigned model artifact on GPU workload
+    kind: kubernetes
+    component_type: gpu_compute
+    severity: high
+    finding: A GPU workload pulls a container/model image with no digest pin (unverifiable artifact).
+    tags: [supply-chain, gpu, unsigned]

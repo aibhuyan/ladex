@@ -41,6 +41,9 @@ class ComponentType(StrEnum):
     AGENT_FRAMEWORK = "agent_framework"
     VECTOR_STORE = "vector_store"
     EMBEDDINGS = "embeddings"
+    # Infrastructure-level AI cargo (Terraform / Kubernetes).
+    GPU_COMPUTE = "gpu_compute"
+    INFERENCE_ENDPOINT = "inference_endpoint"
 
 
 class _MatchBase(BaseModel):

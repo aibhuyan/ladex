@@ -57,12 +57,27 @@ def render_scan(result: ScanResult, console: Console | None = None) -> None:
     _render_summary(result, console)
 
 
+_SEVERITY_STYLE: dict[str, str] = {
+    "high": "red",
+    "medium": "yellow",
+    "low": "blue",
+    "info": "dim",
+}
+
+
 def _render_row(det: Detection, rule_w: int, type_w: int) -> str:
     loc = f"{det.span.start_line}:{det.span.start_col + 1}"
     style = _TYPE_STYLE.get(det.component_type.value, "white")
     type_cell = f"{det.component_type.value:<{type_w}}"
     rule_cell = f"{det.rule_id:<{rule_w}}"
     evidence = escape(_truncate(det.evidence, _EVIDENCE_MAX))
+    if det.severity:  # IaC finding — lead with the severity badge and show the finding text
+        sev_style = _SEVERITY_STYLE.get(det.severity, "white")
+        tail = f"{escape(det.evidence)} [dim]- {escape(_truncate(det.name, 60))}[/dim]"
+        return (
+            f"[dim]{loc:>7}[/dim]  [{style}]{type_cell}[/{style}]  "
+            f"[bold]{rule_cell}[/bold]  [{sev_style}]{det.severity.upper()}[/{sev_style}] {tail}"
+        )
     provider = f" [dim]({escape(det.provider)})[/dim]" if det.provider else ""
     return (
         f"[dim]{loc:>7}[/dim]  [{style}]{type_cell}[/{style}]  "
@@ -220,6 +235,7 @@ def _detection_to_dict(det: Detection) -> dict[str, Any]:
         "end_line": det.span.end_line,
         "end_column": det.span.end_col,
         "tags": list(det.tags),
+        "severity": det.severity,
     }
 
 

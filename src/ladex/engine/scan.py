@@ -35,19 +35,34 @@ DEFAULT_IGNORE_DIRS: frozenset[str] = frozenset(
 )
 
 
-def iter_python_files(
-    root: Path, ignore_dirs: frozenset[str] = DEFAULT_IGNORE_DIRS
+#: Extensions that may contain IaC we can parse (Terraform + Kubernetes manifests).
+IAC_SUFFIXES: frozenset[str] = frozenset({".tf", ".yaml", ".yml"})
+
+
+def _iter_files(
+    root: Path, suffixes: frozenset[str], ignore_dirs: frozenset[str]
 ) -> Iterator[Path]:
-    """Yield every ``.py`` file under ``root``, sorted, skipping ignored/hidden dirs."""
     if root.is_file():
-        if root.suffix == ".py":
+        if root.suffix in suffixes:
             yield root
         return
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in ignore_dirs and not d.startswith("."))
         for name in sorted(filenames):
-            if name.endswith(".py"):
+            if Path(name).suffix in suffixes:
                 yield Path(dirpath) / name
+
+
+def iter_python_files(
+    root: Path, ignore_dirs: frozenset[str] = DEFAULT_IGNORE_DIRS
+) -> Iterator[Path]:
+    """Yield every ``.py`` file under ``root``, sorted, skipping ignored/hidden dirs."""
+    yield from _iter_files(root, frozenset({".py"}), ignore_dirs)
+
+
+def iter_iac_files(root: Path, ignore_dirs: frozenset[str] = DEFAULT_IGNORE_DIRS) -> Iterator[Path]:
+    """Yield every Terraform/Kubernetes candidate file under ``root``."""
+    yield from _iter_files(root, IAC_SUFFIXES, ignore_dirs)
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,13 +92,25 @@ class ScanResult:
         return grouped
 
 
-def scan_path(root: Path, detector: PythonDetector | None = None) -> ScanResult:
-    """Scan a file or directory and return an aggregated, deterministically-ordered result."""
+def scan_path(
+    root: Path, detector: PythonDetector | None = None, *, scan_iac: bool = True
+) -> ScanResult:
+    """Scan a file or directory and return an aggregated, deterministically-ordered result.
+
+    Covers Python (tree-sitter) and, when ``scan_iac``, Terraform/Kubernetes IaC — all
+    producing the same ``Detection`` records ("one engine").
+    """
     det = detector if detector is not None else PythonDetector()
     detections: list[Detection] = []
     files_scanned = 0
     for py_file in iter_python_files(root):
         files_scanned += 1
         detections.extend(det.detect_file(py_file))
+    if scan_iac:
+        from ladex.engine.detect.iac import detect_iac_file
+
+        for iac_file in iter_iac_files(root):
+            files_scanned += 1
+            detections.extend(detect_iac_file(iac_file))
     detections.sort(key=Detection.sort_key)
     return ScanResult(root=root, files_scanned=files_scanned, detections=tuple(detections))

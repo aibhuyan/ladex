@@ -106,8 +106,10 @@ def _package_index(result: ScanResult) -> dict[str, _PackageEntry]:
     """Map each detected PyPI distribution to its aggregated component facts."""
     index: dict[str, _PackageEntry] = {}
     for det in result.detections:
-        if det.match_kind == "string":
-            continue  # string detections are models, handled separately
+        # Only Python import/call/attribute signals map to PyPI packages. String detections
+        # are models (handled separately); IaC "resource" detections aren't packages at all.
+        if det.match_kind not in {"import", "call", "attribute"}:
+            continue
         top = det.evidence.split(".", 1)[0]
         if not top:
             continue

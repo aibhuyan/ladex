@@ -36,6 +36,8 @@ class Detection:
     span: SourceSpan
     provider: str | None = None
     tags: tuple[str, ...] = ()
+    #: For IaC misconfiguration findings: info | low | medium | high. None for code detections.
+    severity: str | None = None
 
     def location(self) -> str:
         """`path:line:col`, clickable in most terminals and editors."""
