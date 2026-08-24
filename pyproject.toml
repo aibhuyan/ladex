@@ -19,6 +19,8 @@ dependencies = [
     "tree-sitter>=0.23",
     "tree-sitter-python>=0.23",
     "rich>=13.7",
+    "httpx>=0.27",
+    "platformdirs>=4.0",
 ]
 
 [project.urls]
@@ -61,10 +63,11 @@ files = ["src", "tests"]
 plugins = ["pydantic.mypy"]
 exclude = ['tests/fixtures/']
 
-# tree-sitter / tree-sitter-python ship no usable stubs in the isolated pre-commit mypy
-# sandbox; treat their symbols as untyped rather than installing them into that sandbox.
+# Third-party libs that aren't installed in the isolated pre-commit mypy sandbox. When the
+# lib IS installed with types (local runs), mypy still uses its real types; this only
+# silences the "missing stub" error in the sandbox, keeping that hook light.
 [[tool.mypy.overrides]]
-module = ["tree_sitter", "tree_sitter_python"]
+module = ["tree_sitter", "tree_sitter_python", "httpx", "platformdirs"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

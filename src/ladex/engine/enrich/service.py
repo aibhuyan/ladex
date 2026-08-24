@@ -1,0 +1,73 @@
+"""Enrichment orchestration: turn a ScanResult into an EnrichmentReport.
+
+Maps detections to the things worth looking up — PyPI distributions for package-level
+signals, Hugging Face repos for model-id strings — then fans out to the cached providers.
+CVE lookup is chained after PyPI because OSV needs a concrete version to query.
+"""
+
+from __future__ import annotations
+
+from ladex.engine.enrich import hfhub, osv, pypi
+from ladex.engine.enrich.cache import Cache
+from ladex.engine.enrich.http import Fetcher, HttpFetcher
+from ladex.engine.enrich.models import (
+    EnrichedModel,
+    EnrichedPackage,
+    EnrichmentReport,
+    EnrichStatus,
+    Vuln,
+)
+from ladex.engine.scan import ScanResult
+
+
+def package_targets(result: ScanResult) -> set[str]:
+    """PyPI distribution names implied by non-string detections."""
+    names: set[str] = set()
+    for det in result.detections:
+        if det.match_kind == "string":
+            continue
+        top = det.evidence.split(".", 1)[0]
+        if top:
+            names.add(pypi.module_to_distribution(top))
+    return names
+
+
+def model_targets(result: ScanResult) -> set[str]:
+    """Hugging Face repo ids implied by model-id string detections."""
+    return {
+        det.evidence
+        for det in result.detections
+        if det.component_type.value == "model" and hfhub.looks_like_repo_id(det.evidence)
+    }
+
+
+def enrich_scan(
+    result: ScanResult,
+    *,
+    fetcher: Fetcher | None = None,
+    cache: Cache | None = None,
+    offline: bool = False,
+    hf_token: str | None = None,
+) -> EnrichmentReport:
+    fetcher = fetcher if fetcher is not None else HttpFetcher()
+    cache = cache if cache is not None else Cache()
+
+    packages: dict[str, EnrichedPackage] = {}
+    for name in sorted(package_targets(result)):
+        info = pypi.fetch_package(name, fetcher, cache, offline=offline)
+        vulns: tuple[Vuln, ...] = ()
+        vulns_status = EnrichStatus.OFFLINE
+        if info.version:
+            vulns, vulns_status = osv.fetch_vulns(
+                name, info.version, fetcher, cache, offline=offline
+            )
+        packages[name] = EnrichedPackage(
+            name=name, pypi=info, vulns=vulns, vulns_status=vulns_status
+        )
+
+    models: dict[str, EnrichedModel] = {}
+    for repo_id in sorted(model_targets(result)):
+        info_model = hfhub.fetch_model(repo_id, fetcher, cache, offline=offline, token=hf_token)
+        models[repo_id] = EnrichedModel(repo_id=repo_id, hf=info_model)
+
+    return EnrichmentReport(offline=offline, packages=packages, models=models)

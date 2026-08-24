@@ -14,6 +14,7 @@ runnable and verifiable:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -50,38 +51,71 @@ def main(argv: list[str] | None = None) -> int:
         return _taxonomy_command(args[1:])
     if args[0] == "detect":
         return _detect_command(args[1:])
-    print(f"ladex {__version__} — a bill of lading for AI")
+    print(f"ladex {__version__} - a bill of lading for AI")
     print(f"unknown command: {args[0]!r}. Try 'ladex taxonomy list'.", file=sys.stderr)
     return 2
 
 
 def _print_banner() -> None:
-    print(f"ladex {__version__} — a bill of lading for AI")
+    print(f"ladex {__version__} - a bill of lading for AI")
     print("Commands: `ladex scan [PATH]`, `ladex detect FILE`, `ladex taxonomy list`.")
 
 
 def _scan_command(args: list[str]) -> int:
     if args and args[0] in {"-h", "--help"}:
-        print("usage: ladex scan [PATH] [--json]", file=sys.stderr)
+        print(
+            "usage: ladex scan [PATH] [--json] [--enrich] [--offline] [--hf-token TOKEN]",
+            file=sys.stderr,
+        )
         return 0
     as_json = "--json" in args
+    do_enrich = "--enrich" in args or "--offline" in args
+    offline = "--offline" in args
+    hf_token = _flag_value(args, "--hf-token") or os.environ.get("HF_TOKEN")
     positional = [a for a in args if not a.startswith("-")]
+    # Drop a value consumed by --hf-token from positionals.
+    if hf_token and hf_token in positional:
+        positional.remove(hf_token)
     root = Path(positional[0]) if positional else Path(".")
     if not root.exists():
         print(f"path does not exist: {root}", file=sys.stderr)
         return 2
 
     # Import rendering lazily so `--json` needs no rich formatting path.
-    from ladex.cli.report import render_scan, scan_to_dict
+    from ladex.cli.report import (
+        enrichment_to_dict,
+        render_enrichment,
+        render_scan,
+        scan_to_dict,
+    )
 
     result = scan_path(root)
+    enrichment = None
+    if do_enrich:
+        from ladex.engine.enrich import enrich_scan
+
+        enrichment = enrich_scan(result, offline=offline, hf_token=hf_token)
+
     if as_json:
-        print(json.dumps(scan_to_dict(result), indent=2))
+        payload = scan_to_dict(result)
+        if enrichment is not None:
+            payload["enrichment"] = enrichment_to_dict(enrichment)
+        print(json.dumps(payload, indent=2))
     else:
         render_scan(result)
+        if enrichment is not None:
+            render_enrichment(enrichment)
     # `scan` is informational: presence of AI is not a failure. Gating on obligations
     # and gaps is the policy layer's job (Step 5).
     return 0
+
+
+def _flag_value(args: list[str], flag: str) -> str | None:
+    if flag in args:
+        idx = args.index(flag)
+        if idx + 1 < len(args):
+            return args[idx + 1]
+    return None
 
 
 def _detect_command(args: list[str]) -> int:

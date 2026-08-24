@@ -9,6 +9,8 @@ from rich.console import Console
 from rich.markup import escape
 
 from ladex.engine.detect import Detection
+from ladex.engine.enrich import EnrichmentReport
+from ladex.engine.enrich.models import EnrichedModel, EnrichedPackage
 from ladex.engine.scan import ScanResult
 
 _TYPE_STYLE: dict[str, str] = {
@@ -71,6 +73,59 @@ def _render_summary(result: ScanResult, console: Console) -> None:
         console.print(f"  {parts}")
 
 
+def render_enrichment(report: EnrichmentReport, console: Console | None = None) -> None:
+    """Print licenses, CVEs, and honest provenance gaps for enriched findings."""
+    console = console or Console()
+    if not report.packages and not report.models:
+        return
+
+    if report.offline:
+        console.print("\n[dim](offline mode - served from cache where available)[/dim]")
+
+    if report.packages:
+        console.print("\n[bold]Packages[/bold]")
+        for pkg in report.packages.values():
+            console.print("  " + _render_package(pkg))
+
+    if report.models:
+        console.print("\n[bold]Models[/bold]")
+        for model in report.models.values():
+            for line in _render_model(model):
+                console.print("  " + line)
+
+    console.print(
+        f"\n[bold]Enrichment:[/bold] {len(report.packages)} package(s), "
+        f"{len(report.models)} model(s), {report.total_vulns} known vuln(s)."
+    )
+
+
+def _render_package(pkg: EnrichedPackage) -> str:
+    version = f"[dim]{escape(pkg.pypi.version)}[/dim]" if pkg.pypi.version else "[dim]?[/dim]"
+    license_ = escape(pkg.pypi.license) if pkg.pypi.license else "[yellow]license unknown[/yellow]"
+    if pkg.vulns:
+        ids = ", ".join(escape(v.id) for v in pkg.vulns[:3])
+        more = f" +{len(pkg.vulns) - 3} more" if len(pkg.vulns) > 3 else ""
+        vulns = f"[red]{len(pkg.vulns)} CVE(s)[/red] ({ids}{more})"
+    else:
+        vulns = "[green]no known CVEs[/green]"
+    return f"[bold]{escape(pkg.name)}[/bold] {version}  {license_}  {vulns}"
+
+
+def _render_model(model: EnrichedModel) -> list[str]:
+    hf = model.hf
+    lic = escape(hf.license) if hf.license else "[yellow]license undeclared[/yellow]"
+    head = f"[bold]{escape(model.repo_id)}[/bold]  {lic}"
+    if hf.base_model:
+        head += f"  [dim]base: {escape(hf.base_model)}[/dim]"
+    # Honest gaps: never a green check for something no scanner can verify.
+    gaps = (
+        f"    [yellow]provenance: {model.provenance}[/yellow]   "
+        f"[yellow]consent_basis: {model.consent_basis}[/yellow]  "
+        f"[dim](needs attestation)[/dim]"
+    )
+    return [head, gaps]
+
+
 def _truncate(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 3] + "..."
 
@@ -110,4 +165,43 @@ def _detection_to_dict(det: Detection) -> dict[str, Any]:
         "end_line": det.span.end_line,
         "end_column": det.span.end_col,
         "tags": list(det.tags),
+    }
+
+
+def enrichment_to_dict(report: EnrichmentReport) -> dict[str, Any]:
+    """Serialize an enrichment report to a plain dict for ``--json`` output."""
+    return {
+        "offline": report.offline,
+        "total_vulns": report.total_vulns,
+        "packages": {
+            name: {
+                "name": pkg.name,
+                "status": pkg.pypi.status.value,
+                "version": pkg.pypi.version,
+                "license": pkg.pypi.license,
+                "vulns_status": pkg.vulns_status.value,
+                "vulns": [
+                    {
+                        "id": v.id,
+                        "aliases": list(v.aliases),
+                        "summary": v.summary,
+                        "severity": v.severity,
+                    }
+                    for v in pkg.vulns
+                ],
+            }
+            for name, pkg in report.packages.items()
+        },
+        "models": {
+            repo_id: {
+                "repo_id": model.repo_id,
+                "status": model.hf.status.value,
+                "license": model.hf.license,
+                "base_model": model.hf.base_model,
+                "datasets": list(model.hf.datasets),
+                "provenance": model.provenance,
+                "consent_basis": model.consent_basis,
+            }
+            for repo_id, model in report.models.items()
+        },
     }
