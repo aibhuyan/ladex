@@ -1,0 +1,55 @@
+[project]
+name = "ladex"
+version = "0.0.0"
+description = "A bill of lading for AI — shift-left AI governance and ML-BOM generation for developers."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "duskyvesper", email = "duskyvesper@gmail.com" }]
+keywords = ["aibom", "ml-bom", "cyclonedx", "eu-ai-act", "ai-governance", "sbom"]
+
+# Runtime deps are intentionally empty at Step 0.
+# They get added per-step, honestly, as each layer lands:
+#   Step 1: pyyaml, pydantic        Step 2: tree-sitter, tree-sitter-python
+#   Step 3: typer/rich              Step 4: httpx, platformdirs
+#   Step 5: opa (shell-out)         Step 6: cyclonedx-python-lib  ... etc.
+dependencies = []
+
+[project.urls]
+Homepage = "https://ladex.dev"
+Repository = "https://github.com/duskyvesper/ladex"
+
+[project.scripts]
+ladex = "ladex.cli:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.3",
+    "pre-commit>=3.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ladex"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
