@@ -66,18 +66,19 @@ def _print_banner() -> None:
 def _scan_command(args: list[str]) -> int:
     if args and args[0] in {"-h", "--help"}:
         print(
-            "usage: ladex scan [PATH] [--json] [--enrich] [--offline] [--hf-token TOKEN]",
+            "usage: ladex scan [PATH] [--json] [--enrich] [--offline] [--hf-token TOKEN]\n"
+            "                  [--write-bom [FILE]]",
             file=sys.stderr,
         )
         return 0
     as_json = "--json" in args
+    write_bom = "--write-bom" in args
     do_enrich = "--enrich" in args or "--offline" in args
     offline = "--offline" in args
     hf_token = _flag_value(args, "--hf-token") or os.environ.get("HF_TOKEN")
-    positional = [a for a in args if not a.startswith("-")]
-    # Drop a value consumed by --hf-token from positionals.
-    if hf_token and hf_token in positional:
-        positional.remove(hf_token)
+    bom_path = Path(_flag_value(args, "--write-bom") or "aibom.cdx.json")
+    consumed = {v for v in (hf_token, str(bom_path)) if v}
+    positional = [a for a in args if not a.startswith("-") and a not in consumed]
     root = Path(positional[0]) if positional else Path(".")
     if not root.exists():
         print(f"path does not exist: {root}", file=sys.stderr)
@@ -97,6 +98,16 @@ def _scan_command(args: list[str]) -> int:
         from ladex.engine.enrich import enrich_scan
 
         enrichment = enrich_scan(result, offline=offline, hf_token=hf_token)
+
+    if write_bom:
+        from ladex.engine.bom import build_bom, render_json
+        from ladex.engine.policy import check_scan
+
+        policy = check_scan(result)
+        bom = build_bom(result, enrichment=enrichment, policy=policy)
+        bom_path.write_text(render_json(bom), encoding="utf-8")
+        print(f"wrote {bom_path} ({len(result.detections)} detection(s))")
+        return 0
 
     if as_json:
         payload = scan_to_dict(result)
