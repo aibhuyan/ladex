@@ -9,6 +9,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.1-3b82f6?style=flat" alt="version 0.1.1">
+  <img src="https://img.shields.io/github/actions/workflow/status/aibhuyan/ladex/ci.yml?branch=main&style=flat&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">

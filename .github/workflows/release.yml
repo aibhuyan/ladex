@@ -1,0 +1,132 @@
+name: release
+
+# Push a tag like `v0.1.2` to cut a full release: per-OS binaries + wheel are built, a
+# GitHub Release is created with them attached, and the wheel is published to PyPI.
+# `workflow_dispatch` rebuilds the binaries/wheel for the CURRENT pyproject version and
+# attaches them to that version's release WITHOUT touching PyPI — handy for backfilling
+# mac/Linux binaries onto an already-published version.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Release version: $V"
+
+  binaries:
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: linux-x64 }
+          - { os: macos-13, target: macos-x64 }
+          - { os: macos-latest, target: macos-arm64 }
+          - { os: windows-latest, target: windows-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Build single binary
+        shell: bash
+        working-directory: packaging
+        run: uv run pyinstaller ladex.spec --distpath ../dist-bin --workpath ../build-bin --noconfirm
+      - name: Smoke-test the frozen binary
+        shell: bash
+        run: |
+          BIN=dist-bin/ladex
+          [ "${{ runner.os }}" = "Windows" ] && BIN=dist-bin/ladex.exe
+          "$BIN" --version
+          "$BIN" scan tests/fixtures/sample_repo
+          "$BIN" scan tests/fixtures/iac
+      - name: Name the asset
+        id: rn
+        shell: bash
+        run: |
+          V="${{ needs.meta.outputs.version }}"
+          SRC=dist-bin/ladex
+          OUT="ladex-$V-${{ matrix.target }}"
+          if [ "${{ runner.os }}" = "Windows" ]; then SRC=dist-bin/ladex.exe; OUT="$OUT.exe"; fi
+          mv "$SRC" "$OUT"
+          echo "asset=$OUT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ steps.rn.outputs.asset }}
+          if-no-files-found: error
+
+  wheel:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/*
+          if-no-files-found: error
+
+  github-release:
+    needs: [meta, binaries, wheel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Collect assets
+        shell: bash
+        run: |
+          mkdir -p upload
+          find artifacts -type f \( -name 'ladex-*' -o -name '*.whl' -o -name '*.tar.gz' \) \
+            -exec cp {} upload/ \;
+          ls -la upload
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.meta.outputs.version }}
+          name: Ladex v${{ needs.meta.outputs.version }}
+          files: upload/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+  pypi-publish:
+    # Only publish to PyPI on a real tag push (never on manual dispatch / backfill).
+    needs: [meta, wheel]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # OIDC for PyPI Trusted Publishing (no token/secret needed)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
