@@ -50,6 +50,11 @@
             "serve"
           ],
           "description": "Arguments passed to the server command."
+        },
+        "ladex.attester": {
+          "type": "string",
+          "default": "",
+          "description": "Name/email recorded as the attester for the 'attest' quick-fix. Empty prompts each time."
         }
       }
     }

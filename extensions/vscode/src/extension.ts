@@ -88,11 +88,66 @@ export function activate(context: vscode.ExtensionContext): void {
     void vscode.window.showErrorMessage(`Ladex: could not start the engine — ${hint}. (${String(err)})`);
   });
 
+  // The "attest" quick-fix (code action) runs `ladex attest` after prompting for the details.
+  context.subscriptions.push(
+    vscode.commands.registerCommand("ladex.attest", (arg: AttestArg) => attest(server, arg)),
+  );
+
   context.subscriptions.push({
     dispose: () => {
       void client?.stop();
     },
   });
+}
+
+interface AttestArg {
+  uri: string;
+  subject: string;
+  claim: string;
+}
+
+async function attest(server: Server, arg: AttestArg): Promise<void> {
+  const pretty = arg.claim.replace(/_/g, " ");
+  const value = await vscode.window.showInputBox({
+    title: `Ladex: attest ${pretty} for ${arg.subject}`,
+    prompt: `Declare the ${pretty} (this is signed and recorded — no scanner can derive it)`,
+    ignoreFocusOut: true,
+  });
+  if (!value) {
+    return; // cancelled
+  }
+  const config = vscode.workspace.getConfiguration("ladex");
+  const attester =
+    config.get<string>("attester", "") ||
+    (await vscode.window.showInputBox({ title: "Attester (name or email)", ignoreFocusOut: true })) ||
+    "";
+
+  const folder =
+    vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(arg.uri))?.uri.fsPath ??
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const args = [
+    "attest",
+    arg.subject,
+    "--claim",
+    arg.claim,
+    "--value",
+    value,
+    ...(attester ? ["--attester", attester] : []),
+    ...(folder ? ["--path", folder] : []),
+  ];
+
+  const result = spawnSync(server.command, args, { cwd: folder, encoding: "utf8" });
+  if (result.status === 0) {
+    void vscode.window.showInformationMessage(`Ladex: attested ${pretty} for ${arg.subject}.`);
+    // Re-run diagnostics so the squiggle updates (the gap is now closed).
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      await editor.document.save();
+    }
+  } else {
+    const msg = (result.stderr || result.stdout || String(result.error) || "unknown error").trim();
+    void vscode.window.showErrorMessage(`Ladex: attest failed — ${msg}`);
+  }
 }
 
 export function deactivate(): Thenable<void> | undefined {
