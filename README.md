@@ -52,36 +52,55 @@ detect (Python + Terraform + Kubernetes)
 surfaces:  CLI   +   VS Code (LSP)   +   GitHub PR check   — one shared engine
 ```
 
-## Install
+## Install — which one do you need?
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.12.
+Ladex has three surfaces. **Install only the one(s) you'll use — they're independent, and none
+requires another.**
+
+| I want to… | Install this | How |
+| --- | --- | --- |
+| Editor squiggles as I type | **VS Code extension** | Search **"Ladex"** in the Extensions panel. The engine is bundled — **no `pip` needed.** |
+| Run `scan` / `write-bom` / `attest` / `verify` / `ci` in a terminal | **the `ladex` CLI** | `uv tool install ladex` (or `pipx install ladex`) |
+| Gate pull requests for my team | **GitHub Action** | Add the workflow (see [On your pull requests](#on-your-pull-requests)) — **nobody installs anything locally.** |
+
+The extension only *shows* AI inline (read-only). **Producing the BOM, signing attestations, and
+running the gate are CLI actions** — so if you want those, install the CLI.
+
+### Installing the CLI
 
 ```bash
-git clone https://github.com/aibhuyan/ladex
-cd ladex
-uv sync
-uv run ladex --version
+uv tool install ladex      # isolated + on your PATH (recommended)
+ladex --version            # -> ladex 0.1.4
 ```
+
+> **Tip:** install it as a *tool* (`uv tool` / `pipx`), not with a plain global `pip install` —
+> `pip` can drop the command in a `Scripts/` dir that isn't on your PATH (a common Windows
+> "command not found"), and it clutters your global environment. Tools are isolated and on PATH.
+> `pipx install ladex` works too; use a project virtualenv only if you specifically want it
+> pinned per-project.
 
 ## Quickstart
 
 ```bash
 # See every AI component in a repo (silent on non-AI code)
-uv run ladex scan path/to/repo
+ladex scan path/to/repo
 
 # Add real facts: licenses, CVEs, model cards (cached; --offline works from cache)
-uv run ladex scan path/to/repo --enrich
+ladex scan path/to/repo --enrich
 
 # What does it obligate under the EU AI Act? (declare project facts to resolve "may apply")
-uv run ladex policy check path/to/repo --user-facing
+ladex policy check path/to/repo --user-facing
 
 # Produce the committable, deterministic ML-BOM
-uv run ladex scan path/to/repo --write-bom aibom.cdx.json
+ladex scan path/to/repo --write-bom aibom.cdx.json
 
 # Sign a human answer for a gap no scanner can fill, then verify it
-uv run ladex attest "sentence-transformers/all-MiniLM-L6-v2" \
+ladex attest "sentence-transformers/all-MiniLM-L6-v2" \
     --claim provenance --value "Curated public corpora, reviewed 2026-08"
-uv run ladex verify
+ladex verify
+
+# Gate it (exit non-zero on undocumented provenance / open obligations)
+ladex ci path/to/repo --fail-on gaps
 ```
 
 ### Example
@@ -149,13 +168,21 @@ GitHub PR check.** The Postgres-backed evidence graph is the remaining v2 item.
 
 ## Development
 
+From source (requires [uv](https://docs.astral.sh/uv/) and Python 3.12):
+
 ```bash
+git clone https://github.com/aibhuyan/ladex
+cd ladex
+uv sync
+uv run ladex --version      # from a checkout, run via `uv run ladex …`
+
 uv run ruff check .
 uv run mypy
 uv run pytest
 ```
 
 Pre-commit (`ruff` + `mypy`) runs on every commit; run `uv run pre-commit install` once.
+See [`RELEASING.md`](RELEASING.md) for how releases are cut and published.
 
 ## License
 
