@@ -1,14 +1,14 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/ladex-lockup-dark.png">
-    <img src="assets/ladex-lockup-light.png" alt="Ladex" width="360">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aibhuyan/ladex/main/assets/ladex-lockup-dark.png">
+    <img src="https://raw.githubusercontent.com/aibhuyan/ladex/main/assets/ladex-lockup-light.png" alt="Ladex" width="360">
   </picture>
 </p>
 
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-3b82f6?style=flat" alt="version 0.1.0">
+  <img src="https://img.shields.io/badge/version-0.1.1-3b82f6?style=flat" alt="version 0.1.1">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">

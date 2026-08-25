@@ -1,6 +1,6 @@
 [project]
 name = "ladex"
-version = "0.1.0"
+version = "0.1.1"
 description = "A bill of lading for AI — shift-left AI governance and ML-BOM generation for developers."
 readme = "README.md"
 requires-python = ">=3.12"
