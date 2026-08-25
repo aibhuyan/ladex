@@ -26,7 +26,12 @@ from ladex.engine.policy.models import (
     Verification,
 )
 from ladex.engine.policy.report import Obligation, ObligationStatus, PolicyReport
-from ladex.engine.policy.service import check_scan
+from ladex.engine.policy.service import (
+    check_scan,
+    find_obligation_rule,
+    obligation_fingerprint,
+    rule_fingerprint,
+)
 
 __all__ = [
     "PROJECT_FILE",
@@ -45,8 +50,11 @@ __all__ = [
     "check_scan",
     "component_facts",
     "evaluate",
+    "find_obligation_rule",
     "load_project_context",
+    "obligation_fingerprint",
     "project_template",
+    "rule_fingerprint",
     "load_bundle_file",
     "load_builtin_bundles",
     "parse_bundle",

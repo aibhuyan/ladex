@@ -24,8 +24,19 @@ def pae(payload_type: str, payload: bytes) -> bytes:
     return b"DSSEv1 %d %b %d %b" % (len(t), t, len(payload), payload)
 
 
-def build_statement(subject: str, claim: str, value: str, attester: str, created: str) -> bytes:
-    """Serialize an in-toto Statement to canonical (sorted, compact) JSON bytes."""
+def build_statement(
+    subject: str,
+    claim: str,
+    value: str,
+    attester: str,
+    created: str,
+    bindings: dict[str, str] | None = None,
+) -> bytes:
+    """Serialize an in-toto Statement to canonical (sorted, compact) JSON bytes.
+
+    ``bindings`` carries extra facts the signature must cover — e.g. ``{"rule_hash": ...}``
+    ties an obligation sign-off to the exact rule text it was made against.
+    """
     digest = hashlib.sha256(subject.encode("utf-8")).hexdigest()
     statement: dict[str, Any] = {
         "_type": STATEMENT_TYPE,
@@ -36,6 +47,7 @@ def build_statement(subject: str, claim: str, value: str, attester: str, created
             "value": value,
             "attester": attester,
             "created": created,
+            "bindings": bindings or {},
         },
     }
     return json.dumps(statement, sort_keys=True, separators=(",", ":")).encode("utf-8")

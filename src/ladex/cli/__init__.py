@@ -360,8 +360,21 @@ def _attest_command(args: list[str]) -> int:
     attester = _flag_value(args, "--attester") or _git_email() or "unknown"
     root = Path(_flag_value(args, "--path") or ".")
 
+    from ladex.engine.attest import OBLIGATION_CLAIM
+
+    # Bind an obligation sign-off to the exact rule text, so a later rule change re-opens it.
+    bindings: dict[str, str] = {}
+    if claim == OBLIGATION_CLAIM:
+        from ladex.engine.policy import find_obligation_rule, rule_fingerprint
+
+        rule = find_obligation_rule(subject)
+        if rule is None:
+            print(f"warning: no obligation rule {subject!r} found; attesting without a binding")
+        else:
+            bindings["rule_hash"] = rule_fingerprint(rule)
+
     signer = get_signer("local")
-    attestation = create_attestation(subject, claim, value, attester, signer)
+    attestation = create_attestation(subject, claim, value, attester, signer, bindings=bindings)
     AttestationStore.for_root(root).add(attestation)
     print(
         f"attested {claim} for {subject}\n"

@@ -11,8 +11,20 @@ from ladex.engine.attest import (
     create_attestation,
 )
 from ladex.engine.ci import build_ci_report
-from ladex.engine.policy import ProjectContext, check_scan, load_builtin_bundles
+from ladex.engine.policy import (
+    ProjectContext,
+    check_scan,
+    find_obligation_rule,
+    load_builtin_bundles,
+    rule_fingerprint,
+)
 from ladex.engine.scan import scan_path
+
+
+def _rule_hash(rule_id: str) -> str:
+    rule = find_obligation_rule(rule_id)
+    assert rule is not None
+    return rule_fingerprint(rule)
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -85,7 +97,16 @@ def test_high_risk_obligations_close_on_attestation(tmp_path: Path) -> None:
         "annex3-human-oversight",
         "annex3-accuracy-robustness-security",
     ):
-        store.add(create_attestation(rule, OBLIGATION_CLAIM, "documented", "compliance@x", signer))
+        store.add(
+            create_attestation(
+                rule,
+                OBLIGATION_CLAIM,
+                "documented",
+                "compliance@x",
+                signer,
+                bindings={"rule_hash": _rule_hash(rule)},
+            )
+        )
     report = build_ci_report(repo, ProjectContext(high_risk=True))
     assert all(g.kind != "obligation" for g in report.gaps)
     assert report.passed is True

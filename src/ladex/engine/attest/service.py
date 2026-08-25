@@ -31,10 +31,12 @@ def create_attestation(
     signer: Signer,
     *,
     created: str | None = None,
+    bindings: dict[str, str] | None = None,
 ) -> Attestation:
     """Build, sign, and package a human declaration as a DSSE-enveloped attestation."""
     created = created or datetime.now(UTC).isoformat()
-    payload = build_statement(subject, claim, value, attester, created)
+    bindings = bindings or {}
+    payload = build_statement(subject, claim, value, attester, created, bindings)
     sig = signer.sign(pae("application/vnd.in-toto+json", payload))
     envelope = build_envelope(payload, keyid=sig.keyid, signature_b64=sig.signature_b64)
     return Attestation(
@@ -46,6 +48,7 @@ def create_attestation(
         keyid=sig.keyid,
         public_key_b64=sig.public_key_b64,
         envelope=envelope,
+        bindings=bindings,
     )
 
 
@@ -71,5 +74,6 @@ def verify_attestation(att: Attestation) -> bool:
         and predicate.get("claim") == att.claim
         and predicate.get("value") == att.value
         and predicate.get("attester") == att.attester
+        and predicate.get("bindings", {}) == att.bindings
     )
     return bool(matches)

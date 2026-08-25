@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ladex.engine.attest import OBLIGATION_CLAIM, AttestationStore, verify_attestation
 from ladex.engine.enrich.hfhub import looks_like_repo_id
-from ladex.engine.policy import ProjectContext, check_scan
+from ladex.engine.policy import ProjectContext, check_scan, obligation_fingerprint
 from ladex.engine.policy.models import Severity
 from ladex.engine.policy.report import PolicyReport
 from ladex.engine.scan import ScanResult, scan_path
@@ -88,10 +88,11 @@ def build_ci_report(
     result = scan if scan is not None else scan_path(root)
     policy = check_scan(result, project)
 
-    verified = {
-        (a.subject, a.claim)
-        for a in AttestationStore.for_root(root).load()
-        if verify_attestation(a)
+    attestations = AttestationStore.for_root(root).load()
+    verified = {(a.subject, a.claim) for a in attestations if verify_attestation(a)}
+    # Verified obligation sign-offs, keyed by rule id (to compare the bound rule hash).
+    oblig_att = {
+        a.subject: a for a in attestations if a.claim == OBLIGATION_CLAIM and verify_attestation(a)
     }
 
     gaps: list[Gap] = []
@@ -136,12 +137,23 @@ def build_ci_report(
                     citation=ob.citation,
                 )
             )
-        elif (ob.rule_id, OBLIGATION_CLAIM) not in verified:
+        else:
+            current = obligation_fingerprint(
+                citation=ob.citation,
+                title=ob.title,
+                obligation=ob.obligation,
+                verification=ob.verification.value,
+            )
+            att = oblig_att.get(ob.rule_id)
+            if att is not None and att.bindings.get("rule_hash") == current:
+                continue  # signed off against the current rule text — closed
+            stale = att is not None  # attested, but the rule text has since changed
+            note = " (prior sign-off is stale - the rule changed; re-attest)" if stale else ""
             gaps.append(
                 Gap(
                     kind="obligation",
                     subject=ob.rule_id,
-                    summary=f"{ob.citation}: {ob.title}",
+                    summary=f"{ob.citation}: {ob.title}{note}",
                     remedy=(
                         f"ladex attest {ob.rule_id} --claim {OBLIGATION_CLAIM} "
                         f'--value "how it is satisfied" --attester you@org'

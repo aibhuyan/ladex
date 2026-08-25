@@ -9,7 +9,7 @@ attestations pulled from this store.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +30,7 @@ class Attestation:
     keyid: str
     public_key_b64: str
     envelope: dict[str, Any]
+    bindings: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -40,6 +41,7 @@ class Attestation:
             "created": self.created,
             "keyid": self.keyid,
             "public_key": self.public_key_b64,
+            "bindings": self.bindings,
             "envelope": self.envelope,
         }
 
@@ -54,6 +56,7 @@ class Attestation:
             keyid=raw["keyid"],
             public_key_b64=raw["public_key"],
             envelope=raw["envelope"],
+            bindings=raw.get("bindings", {}),
         )
 
 
