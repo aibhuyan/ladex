@@ -100,13 +100,14 @@ Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 ## In your editor
 
 The VS Code extension is a thin client over the same engine — inline diagnostics as you type,
-nothing on non-AI code.
+nothing on non-AI code. Install it, no repo checkout needed:
 
-```bash
-cd extensions/vscode
-npm install
-npm run compile     # then press F5 in VS Code to launch the dev host
-```
+1. Install the engine so the extension can call it: `pip install ladex` (or `uv tool install ladex`).
+2. Grab `ladex-<version>.vsix` from the [Releases page](https://github.com/aibhuyan/ladex/releases)
+   → Extensions panel → **Install from VSIX…** (Marketplace listing coming soon).
+
+Then open any Python file that uses an AI library. See
+[`extensions/vscode/README.md`](extensions/vscode/README.md) for configuration and development.
 
 ## Design principles
 

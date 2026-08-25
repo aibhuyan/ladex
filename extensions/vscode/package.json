@@ -5,16 +5,28 @@
   "version": "0.1.0",
   "publisher": "ladex",
   "license": "MIT",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/aibhuyan/ladex"
   },
+  "bugs": {
+    "url": "https://github.com/aibhuyan/ladex/issues"
+  },
+  "homepage": "https://github.com/aibhuyan/ladex#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Linters",
     "Other"
+  ],
+  "keywords": [
+    "ai",
+    "governance",
+    "eu ai act",
+    "aibom",
+    "cyclonedx"
   ],
   "activationEvents": [
     "onLanguage:python"
@@ -44,7 +56,10 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -52,6 +67,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
     "typescript": "^5.4.0"
   }
 }
