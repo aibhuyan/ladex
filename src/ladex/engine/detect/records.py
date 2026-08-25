@@ -38,10 +38,22 @@ class Detection:
     tags: tuple[str, ...] = ()
     #: For IaC misconfiguration findings: info | low | medium | high. None for code detections.
     severity: str | None = None
+    #: 1-based cell index within a Jupyter notebook; None for plain files. Line/col are
+    #: relative to that cell's source.
+    cell: int | None = None
 
     def location(self) -> str:
-        """`path:line:col`, clickable in most terminals and editors."""
-        return f"{self.path}:{self.span.start_line}:{self.span.start_col + 1}"
+        """`path:line:col` (or `path:cellN:line:col` in a notebook) — clickable-ish."""
+        line, col = self.span.start_line, self.span.start_col + 1
+        if self.cell is not None:
+            return f"{self.path}:cell{self.cell}:{line}:{col}"
+        return f"{self.path}:{line}:{col}"
 
-    def sort_key(self) -> tuple[str, int, int, str]:
-        return (self.path, self.span.start_line, self.span.start_col, self.rule_id)
+    def sort_key(self) -> tuple[str, int, int, int, str]:
+        return (
+            self.path,
+            self.cell or 0,
+            self.span.start_line,
+            self.span.start_col,
+            self.rule_id,
+        )

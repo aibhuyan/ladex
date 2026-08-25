@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">
   <img src="https://img.shields.io/badge/tests-178%20passing-22c55e?style=flat" alt="tests 178 passing">
   <img src="https://img.shields.io/badge/output-CycloneDX%20ML--BOM-3b82f6?style=flat" alt="CycloneDX ML-BOM">
-  <img src="https://img.shields.io/badge/EU%20AI%20Act-Art.%2050-3b82f6?style=flat" alt="EU AI Act Art. 50">
+  <img src="https://img.shields.io/badge/EU%20AI%20Act-Art.%205%2F50%2F53%20%2B%20Annex%20III-3b82f6?style=flat" alt="EU AI Act coverage">
 </p>
 
 ---
@@ -43,7 +43,7 @@ attestations for the fields no tool can derive.
 ## What it does
 
 ```
-detect (Python + Terraform + Kubernetes)
+detect (Python + Jupyter notebooks + Terraform + Kubernetes)
   → enrich    PyPI licenses · OSV CVEs · Hugging Face model cards   (cached, offline-capable)
   → obligate  EU AI Act (Art. 5 bans · Annex III/Art. 8-15 high-risk · Art. 50 · Art. 53 GPAI)
   → BOM       deterministic CycloneDX ML-BOM that diffs cleanly in PRs
@@ -70,7 +70,7 @@ running the gate are CLI actions** — so if you want those, install the CLI.
 
 ```bash
 uv tool install ladex      # isolated + on your PATH (recommended)
-ladex --version            # -> ladex 0.1.4
+ladex --version            # -> ladex 0.2.0
 ```
 
 > **Tip:** install it as a *tool* (`uv tool` / `pipx`), not with a plain global `pip install` —
@@ -125,11 +125,11 @@ Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 | Command | What it does |
 | --- | --- |
 | `ladex --version` | Print the installed version. |
-| `ladex scan [PATH]` | Detect AI components across a tree (Python + Terraform + Kubernetes). Silent on non-AI code. |
+| `ladex scan [PATH]` | Detect AI components across a tree (Python + Jupyter notebooks + Terraform + Kubernetes). Silent on non-AI code. |
 | `ladex scan PATH --enrich` | Add licenses (PyPI), CVEs (OSV), and model cards (HF). `--offline` uses the cache. |
 | `ladex scan PATH --write-bom [FILE]` | Write the deterministic CycloneDX ML-BOM (default `aibom.cdx.json`). |
 | `ladex scan PATH --json` | Machine-readable scan output. |
-| `ladex detect FILE.py` | Detect AI in a single file. |
+| `ladex detect FILE.py` | Detect AI in a single file (`.py` or `.ipynb`). |
 | `ladex policy init [PATH]` | Scaffold `.ladex/project.yaml` (declare your EU AI Act classification). |
 | `ladex policy check [PATH]` | Show applicable EU AI Act obligations and open gaps (`--json` for machine output). |
 | `ladex policy list` | List the loaded policy bundles and rules. |
@@ -191,7 +191,7 @@ Then open any Python file that uses an AI library. See
 
 ## Scope
 
-**Python + Terraform + Kubernetes detection. EU AI Act. Three surfaces — CLI, VS Code, and a
+**Python + Jupyter + Terraform + Kubernetes detection. EU AI Act. Three surfaces — CLI, VS Code, and a
 GitHub PR check.** The Postgres-backed evidence graph is the remaining v2 item.
 
 ## Development

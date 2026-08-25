@@ -68,6 +68,8 @@ _SEVERITY_STYLE: dict[str, str] = {
 
 def _render_row(det: Detection, rule_w: int, type_w: int) -> str:
     loc = f"{det.span.start_line}:{det.span.start_col + 1}"
+    if det.cell is not None:
+        loc = f"c{det.cell}:{loc}"
     style = _TYPE_STYLE.get(det.component_type.value, "white")
     type_cell = f"{det.component_type.value:<{type_w}}"
     rule_cell = f"{det.rule_id:<{rule_w}}"
@@ -300,6 +302,7 @@ def _detection_to_dict(det: Detection) -> dict[str, Any]:
         "end_column": det.span.end_col,
         "tags": list(det.tags),
         "severity": det.severity,
+        "cell": det.cell,
     }
 
 

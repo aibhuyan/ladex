@@ -438,13 +438,19 @@ def _git_email() -> str | None:
 
 def _detect_command(args: list[str]) -> int:
     if not args or args[0] in {"-h", "--help"}:
-        print("usage: ladex detect FILE.py", file=sys.stderr)
+        print("usage: ladex detect FILE.py|FILE.ipynb", file=sys.stderr)
         return 0 if args else 2
     target = Path(args[0])
     if not target.is_file():
         print(f"not a file: {target}", file=sys.stderr)
         return 2
-    detections = PythonDetector().detect_file(target)
+    detector = PythonDetector()
+    if target.suffix == ".ipynb":
+        from ladex.engine.detect.notebook import detect_notebook_file
+
+        detections = detect_notebook_file(target, detector)
+    else:
+        detections = detector.detect_file(target)
     if not detections:
         return 0  # ruthless silence: nothing AI-relevant, say nothing
     for d in detections:

@@ -65,6 +65,13 @@ def iter_iac_files(root: Path, ignore_dirs: frozenset[str] = DEFAULT_IGNORE_DIRS
     yield from _iter_files(root, IAC_SUFFIXES, ignore_dirs)
 
 
+def iter_notebook_files(
+    root: Path, ignore_dirs: frozenset[str] = DEFAULT_IGNORE_DIRS
+) -> Iterator[Path]:
+    """Yield every Jupyter notebook under ``root``."""
+    yield from _iter_files(root, frozenset({".ipynb"}), ignore_dirs)
+
+
 @dataclass(frozen=True, slots=True)
 class ScanResult:
     """The outcome of scanning a path: all detections plus summary counts."""
@@ -93,11 +100,15 @@ class ScanResult:
 
 
 def scan_path(
-    root: Path, detector: PythonDetector | None = None, *, scan_iac: bool = True
+    root: Path,
+    detector: PythonDetector | None = None,
+    *,
+    scan_iac: bool = True,
+    scan_notebooks: bool = True,
 ) -> ScanResult:
     """Scan a file or directory and return an aggregated, deterministically-ordered result.
 
-    Covers Python (tree-sitter) and, when ``scan_iac``, Terraform/Kubernetes IaC — all
+    Covers Python (tree-sitter), Jupyter notebooks, and Terraform/Kubernetes IaC — all
     producing the same ``Detection`` records ("one engine").
     """
     det = detector if detector is not None else PythonDetector()
@@ -106,6 +117,12 @@ def scan_path(
     for py_file in iter_python_files(root):
         files_scanned += 1
         detections.extend(det.detect_file(py_file))
+    if scan_notebooks:
+        from ladex.engine.detect.notebook import detect_notebook_file
+
+        for nb_file in iter_notebook_files(root):
+            files_scanned += 1
+            detections.extend(detect_notebook_file(nb_file, det))
     if scan_iac:
         from ladex.engine.detect.iac import detect_iac_file
 
