@@ -120,6 +120,23 @@ def load_builtin_taxonomy() -> Taxonomy:
     return aggregate(load_builtin_packs())
 
 
+#: Where a project keeps its own taxonomy packs, loaded alongside the built-ins.
+USER_TAXONOMY_DIR = ".ladex/packs/taxonomy"
+
+
+def load_user_taxonomy_packs(root: Path) -> list[TaxonomyPack]:
+    """Load a project's own taxonomy packs from ``<root>/.ladex/packs/taxonomy/*.yaml``."""
+    directory = root / USER_TAXONOMY_DIR
+    if not directory.is_dir():
+        return []
+    return [load_pack_file(p) for p in sorted(directory.glob("*.yaml"))]
+
+
+def load_project_taxonomy(root: Path) -> Taxonomy:
+    """Built-in packs plus the project's own — duplicate rule ids across all are rejected."""
+    return aggregate([*load_builtin_packs(), *load_user_taxonomy_packs(root)])
+
+
 def _format_validation_error(exc: ValidationError) -> str:
     parts: list[str] = []
     for err in exc.errors():

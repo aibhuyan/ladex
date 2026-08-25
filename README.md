@@ -181,6 +181,31 @@ platform builds **bundle the engine**, so it's a single install with no separate
 Then open any Python file that uses an AI library. See
 [`extensions/vscode/README.md`](extensions/vscode/README.md) for configuration and development.
 
+## Extending Ladex (custom packs)
+
+Ladex loads your project's own rules alongside the built-ins — no fork, no config. Drop
+YAML into `.ladex/packs/` and every surface (CLI, editor, PR check) picks them up:
+
+- **`​.ladex/packs/taxonomy/*.yaml`** — detection rules for your internal frameworks/SDKs
+  (same format as the built-in packs: `import` / `call` / `attribute` / `string` matches).
+- **`​.ladex/packs/policy/**/*.yaml`** — your own obligation bundles (e.g. an internal
+  "every inference API needs a model card" rule), evaluated with the EU AI Act bundles.
+
+```yaml
+# .ladex/packs/taxonomy/acme.yaml
+schema_version: 1
+name: acme-internal
+version: 0.1.0
+rules:
+  - id: acme.internal-llm
+    name: Acme internal LLM SDK
+    component_type: inference_api
+    provider: Acme
+    match: { kind: import, module: acme_llm }
+```
+
+Rule ids must be unique across built-in and custom packs (a clash is rejected loudly).
+
 ## Design principles
 
 - **One engine, three surfaces.** The IDE, CLI, and GitHub PR check all call the same Python

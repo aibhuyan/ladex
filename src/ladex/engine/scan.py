@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ladex.engine.detect import Detection, PythonDetector
+from ladex.engine.taxonomy import Taxonomy, load_project_taxonomy
 
 # Directories never worth scanning. Hidden directories (".*") are pruned as well.
 DEFAULT_IGNORE_DIRS: frozenset[str] = frozenset(
@@ -99,6 +100,12 @@ class ScanResult:
         return grouped
 
 
+def _project_taxonomy(root: Path) -> Taxonomy:
+    # Built-in rules + any the project ships in .ladex/packs/taxonomy/.
+    base = root if root.is_dir() else root.parent
+    return load_project_taxonomy(base)
+
+
 def scan_path(
     root: Path,
     detector: PythonDetector | None = None,
@@ -111,7 +118,7 @@ def scan_path(
     Covers Python (tree-sitter), Jupyter notebooks, and Terraform/Kubernetes IaC — all
     producing the same ``Detection`` records ("one engine").
     """
-    det = detector if detector is not None else PythonDetector()
+    det = detector if detector is not None else PythonDetector(_project_taxonomy(root))
     detections: list[Detection] = []
     files_scanned = 0
     for py_file in iter_python_files(root):

@@ -16,6 +16,8 @@ from ladex.engine.policy.loader import (
     PolicyError,
     load_builtin_bundles,
     load_bundle_file,
+    load_project_bundles,
+    load_user_bundles,
     parse_bundle,
 )
 from ladex.engine.policy.models import (
@@ -51,7 +53,9 @@ __all__ = [
     "component_facts",
     "evaluate",
     "find_obligation_rule",
+    "load_project_bundles",
     "load_project_context",
+    "load_user_bundles",
     "obligation_fingerprint",
     "project_template",
     "rule_fingerprint",

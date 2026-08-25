@@ -83,6 +83,37 @@ def load_builtin_bundles() -> list[PolicyBundle]:
     return bundles
 
 
+#: Where a project keeps its own policy bundles, loaded alongside the built-ins.
+USER_POLICY_DIR = ".ladex/packs/policy"
+
+
+def load_user_bundles(root: Path) -> list[PolicyBundle]:
+    """Load a project's own policy bundles from ``<root>/.ladex/packs/policy/**/*.yaml``."""
+    directory = root / USER_POLICY_DIR
+    if not directory.is_dir():
+        return []
+    return [load_bundle_file(p) for p in sorted(directory.rglob("*.yaml"))]
+
+
+def load_project_bundles(root: Path) -> list[PolicyBundle]:
+    """Built-in bundles plus the project's own; rejects duplicate bundle or rule ids."""
+    bundles = [*load_builtin_bundles(), *load_user_bundles(root)]
+    bundle_ids: set[str] = set()
+    rule_ids: dict[str, str] = {}
+    for bundle in bundles:
+        if bundle.id in bundle_ids:
+            raise PolicyError(f"duplicate bundle id {bundle.id!r}")
+        bundle_ids.add(bundle.id)
+        for rule in bundle.rules:
+            if rule.id in rule_ids:
+                raise PolicyError(
+                    f"duplicate policy rule id {rule.id!r} in bundle {bundle.id!r}; "
+                    f"first seen in {rule_ids[rule.id]!r}"
+                )
+            rule_ids[rule.id] = bundle.id
+    return bundles
+
+
 def _format_error(exc: ValidationError) -> str:
     parts: list[str] = []
     for err in exc.errors():

@@ -94,7 +94,7 @@ def build_ci_report(
     """
     project = project or ProjectContext()
     result = scan if scan is not None else scan_path(root)
-    policy = check_scan(result, project)
+    policy = check_scan(result, project, root=root)
     diff = diff_scans(scan_path(base), result) if base is not None else None
 
     attestations = AttestationStore.for_root(root).load()

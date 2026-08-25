@@ -9,6 +9,8 @@ from ladex.engine.taxonomy.loader import (
     load_builtin_packs,
     load_builtin_taxonomy,
     load_pack_file,
+    load_project_taxonomy,
+    load_user_taxonomy_packs,
     parse_pack,
 )
 from ladex.engine.taxonomy.models import (
@@ -37,5 +39,7 @@ __all__ = [
     "load_builtin_packs",
     "load_builtin_taxonomy",
     "load_pack_file",
+    "load_project_taxonomy",
+    "load_user_taxonomy_packs",
     "parse_pack",
 ]

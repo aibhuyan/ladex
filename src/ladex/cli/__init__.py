@@ -242,7 +242,7 @@ def _policy_check(args: list[str]) -> int:
 
     try:
         result = scan_path(root)
-        report = check_scan(result, project)
+        report = check_scan(result, project, root=root)
     except PolicyError as exc:
         print(f"INVALID: {exc}", file=sys.stderr)
         return 1
@@ -407,7 +407,7 @@ def _attest_command(args: list[str]) -> int:
     if claim == OBLIGATION_CLAIM:
         from ladex.engine.policy import find_obligation_rule, rule_fingerprint
 
-        rule = find_obligation_rule(subject)
+        rule = find_obligation_rule(subject, root)
         if rule is None:
             print(f"warning: no obligation rule {subject!r} found; attesting without a binding")
         else:
