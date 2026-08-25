@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from ladex.engine.attest.service import (
+    ALL_CLAIMS,
     ATTESTABLE_CLAIMS,
+    OBLIGATION_CLAIM,
     create_attestation,
     verify_attestation,
 )
@@ -17,7 +19,9 @@ from ladex.engine.attest.signer import (
 from ladex.engine.attest.store import Attestation, AttestationStore, store_path
 
 __all__ = [
+    "ALL_CLAIMS",
     "ATTESTABLE_CLAIMS",
+    "OBLIGATION_CLAIM",
     "Attestation",
     "AttestationStore",
     "LocalSigner",

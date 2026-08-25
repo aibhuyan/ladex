@@ -88,7 +88,7 @@ def build_bom(
     bom.register_dependency(root, list(bom.components))
 
     if policy is not None:
-        _attach_policy(bom, policy)
+        _attach_policy(bom, policy, attested)
 
     return bom
 
@@ -190,7 +190,9 @@ def _add_model_component(
     bom.components.add(comp)
 
 
-def _attach_policy(bom: Bom, policy: PolicyReport) -> None:
+def _attach_policy(
+    bom: Bom, policy: PolicyReport, attested: dict[tuple[str, str], Attestation]
+) -> None:
     for ob in policy.obligations:
         bom.metadata.properties.add(
             Property(
@@ -198,6 +200,15 @@ def _attach_policy(bom: Bom, policy: PolicyReport) -> None:
                 value=f"{ob.status.value}|{ob.verification.value}|{ob.citation}",
             )
         )
+        # A verified "satisfied" attestation is compliance evidence in the artifact itself.
+        att = attested.get((ob.rule_id, "satisfied"))
+        if att is not None:
+            bom.metadata.properties.add(
+                Property(
+                    name=f"{_PROP}obligation:{ob.rule_id}.attested_by",
+                    value=att.attester,
+                )
+            )
 
 
 # -- determinism & helpers --------------------------------------------------

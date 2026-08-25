@@ -278,15 +278,18 @@ def _ci_command(args: list[str]) -> int:
 def _attest_command(args: list[str]) -> int:
     if not args or args[0] in {"-h", "--help"}:
         print(
-            "usage: ladex attest SUBJECT --claim provenance --value TEXT [--attester WHO]\n"
-            "                    [--path DIR]\n"
-            "  SUBJECT is a model id (e.g. sentence-transformers/all-MiniLM-L6-v2).",
+            "usage: ladex attest SUBJECT --claim CLAIM --value TEXT [--attester WHO] [--path DIR]\n"
+            "  SUBJECT + CLAIM:\n"
+            "    a model id (e.g. sentence-transformers/all-MiniLM-L6-v2): "
+            "--claim provenance|consent_basis\n"
+            "    an obligation rule id (e.g. art-50-1-ai-interaction-disclosure): "
+            "--claim satisfied",
             file=sys.stderr,
         )
         return 0 if args else 2
 
     from ladex.engine.attest import (
-        ATTESTABLE_CLAIMS,
+        ALL_CLAIMS,
         AttestationStore,
         create_attestation,
         get_signer,
@@ -305,12 +308,12 @@ def _attest_command(args: list[str]) -> int:
     }
     positional = [p for p in positional if p not in consumed]
     if not positional:
-        print("attest requires a SUBJECT (model id)", file=sys.stderr)
+        print("attest requires a SUBJECT (a model id or an obligation rule id)", file=sys.stderr)
         return 2
     subject = positional[0]
     claim = _flag_value(args, "--claim") or "provenance"
-    if claim not in ATTESTABLE_CLAIMS:
-        print(f"unknown claim {claim!r}; choose from {list(ATTESTABLE_CLAIMS)}", file=sys.stderr)
+    if claim not in ALL_CLAIMS:
+        print(f"unknown claim {claim!r}; choose from {list(ALL_CLAIMS)}", file=sys.stderr)
         return 2
     value = _flag_value(args, "--value")
     if value is None:

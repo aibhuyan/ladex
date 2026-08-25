@@ -13,8 +13,14 @@ from ladex.engine.attest.statement import (
 )
 from ladex.engine.attest.store import Attestation
 
-#: Claims a human can attest — the fields no scanner can derive (see EnrichedModel).
+#: Model claims a human can attest — the fields no scanner can derive (see EnrichedModel).
 ATTESTABLE_CLAIMS: tuple[str, ...] = ("provenance", "consent_basis")
+
+#: The claim used to attest that a policy *obligation* is satisfied (subject = rule id).
+OBLIGATION_CLAIM = "satisfied"
+
+#: Every claim `ladex attest` accepts.
+ALL_CLAIMS: tuple[str, ...] = (*ATTESTABLE_CLAIMS, OBLIGATION_CLAIM)
 
 
 def create_attestation(

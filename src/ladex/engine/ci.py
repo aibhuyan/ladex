@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-from ladex.engine.attest import AttestationStore, verify_attestation
+from ladex.engine.attest import OBLIGATION_CLAIM, AttestationStore, verify_attestation
 from ladex.engine.enrich.hfhub import looks_like_repo_id
 from ladex.engine.policy import ProjectContext, check_scan
 from ladex.engine.policy.report import PolicyReport
@@ -117,15 +117,19 @@ def build_ci_report(
                 )
             )
 
-    # Obligation gaps: applicable obligations that need a human attestation.
+    # Obligation gaps: applicable obligations that need a human attestation and don't yet
+    # have a verified "satisfied" attestation for the rule.
     for ob in policy.applies:
-        if ob.is_gap:
+        if ob.is_gap and (ob.rule_id, OBLIGATION_CLAIM) not in verified:
             gaps.append(
                 Gap(
                     kind="obligation",
                     subject=ob.rule_id,
                     summary=f"{ob.citation}: {ob.title}",
-                    remedy=ob.obligation.strip(),
+                    remedy=(
+                        f"ladex attest {ob.rule_id} --claim {OBLIGATION_CLAIM} "
+                        f'--value "how it is satisfied" --attester you@org'
+                    ),
                     citation=ob.citation,
                 )
             )
@@ -166,8 +170,7 @@ def render_markdown(report: CiReport) -> str:
         lines.append("| Type | Item | How to resolve |")
         lines.append("| --- | --- | --- |")
         for g in report.gaps:
-            remedy = f"`{g.remedy}`" if g.kind == "provenance" else g.remedy
-            lines.append(f"| {g.kind} | {_md(g.summary)} | {_md(remedy)} |")
+            lines.append(f"| {g.kind} | {_md(g.summary)} | `{_md(g.remedy)}` |")
         lines.append("")
 
     if report.warnings:
