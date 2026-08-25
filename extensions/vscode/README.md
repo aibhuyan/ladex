@@ -11,8 +11,9 @@ the editor can never disagree with the gate.
 
 The platform builds **bundle the Ladex engine** — one install, no separate `pip install`.
 
-- **From the Marketplace:** search **“Ladex”** in the Extensions panel *(once published)* —
-  VS Code automatically installs the build for your OS/CPU.
+- **From the Marketplace:** search **“Ladex”** in the Extensions panel (or open the
+  [listing](https://marketplace.visualstudio.com/items?itemName=ladex.ladex)) — VS Code
+  automatically installs the build for your OS/CPU.
 - **From a `.vsix`:** download the one matching your platform from the
   [Releases page](https://github.com/aibhuyan/ladex/releases) —
   `ladex-<version>-{win32-x64,darwin-arm64,linux-x64}.vsix` — then Extensions panel → `⋯` →

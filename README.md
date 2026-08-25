@@ -144,10 +144,13 @@ See [`apps/github/README.md`](apps/github/README.md) for all inputs. Locally, th
 The VS Code extension gives inline diagnostics as you type, nothing on non-AI code — and the
 platform builds **bundle the engine**, so it's a single install with no separate `pip install`:
 
-- Grab the `.vsix` for your platform from the
-  [Releases page](https://github.com/aibhuyan/ladex/releases) —
-  `ladex-<version>-{win32-x64,darwin-arm64,linux-x64}.vsix` — → Extensions panel →
-  **Install from VSIX…** (Marketplace listing coming soon, which auto-selects your platform).
+- **From the Marketplace** — search **"Ladex"** in the Extensions panel (or
+  [open the listing](https://marketplace.visualstudio.com/items?itemName=ladex.ladex)). VS Code
+  automatically installs the build for your OS/CPU.
+- **From a `.vsix`** — download the one matching your platform from the
+  [Releases page](https://github.com/aibhuyan/ladex/releases)
+  (`ladex-<version>-{win32-x64,darwin-arm64,linux-x64}.vsix`) → Extensions panel →
+  **Install from VSIX…**.
 
 Then open any Python file that uses an AI library. See
 [`extensions/vscode/README.md`](extensions/vscode/README.md) for configuration and development.
