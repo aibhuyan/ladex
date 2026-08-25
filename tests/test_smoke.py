@@ -9,14 +9,14 @@ from ladex.cli import main
 
 
 def test_version_is_defined() -> None:
-    assert ladex.__version__ == "0.1.4"
+    assert ladex.__version__ == "0.2.0"
 
 
 def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
     rc = main(["--version"])
     captured = capsys.readouterr()
     assert rc == 0
-    assert captured.out.strip() == "ladex 0.1.4"
+    assert captured.out.strip() == "ladex 0.2.0"
 
 
 def test_cli_default_runs(capsys: pytest.CaptureFixture[str]) -> None:

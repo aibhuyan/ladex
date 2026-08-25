@@ -28,7 +28,7 @@ runs:
   using: "composite"
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "3.12"
 
@@ -63,7 +63,7 @@ runs:
 
     - name: Upsert PR comment
       if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         LADEX_MD: ${{ runner.temp }}/ladex.md
       with:

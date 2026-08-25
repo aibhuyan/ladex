@@ -8,12 +8,12 @@
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.4-3b82f6?style=flat" alt="version 0.1.4">
+  <img src="https://img.shields.io/badge/version-0.2.0-3b82f6?style=flat" alt="version 0.2.0">
   <img src="https://img.shields.io/github/actions/workflow/status/aibhuyan/ladex/ci.yml?branch=main&style=flat&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">
-  <img src="https://img.shields.io/badge/tests-139%20passing-22c55e?style=flat" alt="tests 139 passing">
+  <img src="https://img.shields.io/badge/tests-178%20passing-22c55e?style=flat" alt="tests 178 passing">
   <img src="https://img.shields.io/badge/output-CycloneDX%20ML--BOM-3b82f6?style=flat" alt="CycloneDX ML-BOM">
   <img src="https://img.shields.io/badge/EU%20AI%20Act-Art.%2050-3b82f6?style=flat" alt="EU AI Act Art. 50">
 </p>
@@ -120,6 +120,28 @@ infra/main.tf
 Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 ```
 
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `ladex --version` | Print the installed version. |
+| `ladex scan [PATH]` | Detect AI components across a tree (Python + Terraform + Kubernetes). Silent on non-AI code. |
+| `ladex scan PATH --enrich` | Add licenses (PyPI), CVEs (OSV), and model cards (HF). `--offline` uses the cache. |
+| `ladex scan PATH --write-bom [FILE]` | Write the deterministic CycloneDX ML-BOM (default `aibom.cdx.json`). |
+| `ladex scan PATH --json` | Machine-readable scan output. |
+| `ladex detect FILE.py` | Detect AI in a single file. |
+| `ladex policy init [PATH]` | Scaffold `.ladex/project.yaml` (declare your EU AI Act classification). |
+| `ladex policy check [PATH]` | Show applicable EU AI Act obligations and open gaps (`--json` for machine output). |
+| `ladex policy list` | List the loaded policy bundles and rules. |
+| `ladex ci [PATH]` | Gate for CI/PRs: exit non-zero on open gaps. `--fail-on none\|gaps\|strict`, `--format text\|markdown\|json\|github`. |
+| `ladex attest SUBJECT --claim CLAIM --value TEXT` | Sign a human declaration — a model's `provenance`/`consent_basis`, or an obligation rule id with `--claim satisfied`. `--attester WHO`. |
+| `ladex verify [PATH]` | Verify every stored attestation's signature. |
+| `ladex taxonomy list` · `ladex taxonomy validate [PACK…]` | Inspect / validate the detection rules. |
+| `ladex serve` | Run the LSP server over stdio (the VS Code extension launches this). |
+
+Project-fact flags for `policy check` / `ci` override `.ladex/project.yaml`:
+`--user-facing`/`--not-user-facing`, `--synthetic-content`/`--no-synthetic-content`.
+
 ## On your pull requests
 
 The GitHub Action runs the same engine as a **merge gate**: it detects AI added in a PR,
@@ -134,8 +156,8 @@ jobs:
   ladex:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: aibhuyan/ladex/apps/github@v0.1.4
+      - uses: actions/checkout@v5
+      - uses: aibhuyan/ladex/apps/github@v0.2.0
         with: { fail-on: gaps }
 ```
 
