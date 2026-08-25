@@ -38,9 +38,22 @@ git push && git push origin v0.1.2
 
 The tag push triggers `release.yml`, which:
 1. builds `ladex-<ver>-{linux-x64,macos-arm64,windows-x64}` (smoke-tested),
-2. builds `ladex-<ver>-py3-none-any.whl` + sdist,
-3. creates the **GitHub Release** with all of the above attached,
-4. publishes the wheel to **PyPI**.
+2. builds per-platform VS Code extensions with the engine bundled
+   (`ladex-<ver>-{win32-x64,darwin-arm64,linux-x64}.vsix`) + a universal fallback,
+3. builds `ladex-<ver>-py3-none-any.whl` + sdist,
+4. creates the **GitHub Release** with all of the above attached,
+5. publishes the wheel to **PyPI** (trusted publishing),
+6. publishes every VSIX to the **VS Code Marketplace** (needs the `VSCE_PAT` secret).
+
+### Marketplace publishing setup (one-time)
+
+Add a repo secret **`VSCE_PAT`** (Settings → Secrets and variables → Actions) — an Azure
+DevOps Personal Access Token with **Marketplace: Manage** scope, **All accessible
+organizations**. Without it, the `marketplace-publish` job no-ops (it won't fail the release).
+
+> ⚠️ Azure DevOps is deprecating all-orgs PATs on **2026-12-01**. Before then, rotate to
+> Entra ID auth (`vsce publish --azure-credential`) or the current replacement per the
+> `@vscode/vsce` docs, and update the workflow accordingly.
 
 ## Backfilling binaries onto an existing release
 
