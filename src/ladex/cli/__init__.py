@@ -49,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
         return _scan_command(args[1:])
     if args[0] == "policy":
         return _policy_command(args[1:])
+    if args[0] == "ci":
+        return _ci_command(args[1:])
     if args[0] == "attest":
         return _attest_command(args[1:])
     if args[0] == "verify":
@@ -210,6 +212,67 @@ def _policy_check(args: list[str]) -> int:
         render_policy(report)
     # Informational for now; the CI gate on open gaps turns on with attestation (Step 7).
     return 0
+
+
+def _ci_command(args: list[str]) -> int:
+    if args and args[0] in {"-h", "--help"}:
+        print(
+            "usage: ladex ci [PATH] [--format text|markdown|json|github]\n"
+            "                [--fail-on none|gaps|strict]\n"
+            "                [--user-facing/--not-user-facing] "
+            "[--synthetic-content/--no-synthetic-content]",
+            file=sys.stderr,
+        )
+        return 0
+
+    import os as _os
+
+    from ladex.cli.report import (
+        ci_to_dict,
+        emit_github_annotations,
+        render_ci,
+    )
+    from ladex.engine.ci import FailOn, build_ci_report, render_markdown
+    from ladex.engine.policy import ProjectContext
+
+    fmt = _flag_value(args, "--format") or "text"
+    fail_on_raw = _flag_value(args, "--fail-on") or "gaps"
+    try:
+        fail_on = FailOn(fail_on_raw)
+    except ValueError:
+        print(f"invalid --fail-on {fail_on_raw!r}; choose none|gaps|strict", file=sys.stderr)
+        return 2
+
+    project = ProjectContext(
+        user_facing=_tristate(args, "--user-facing", "--not-user-facing"),
+        generates_synthetic_content=_tristate(
+            args, "--synthetic-content", "--no-synthetic-content"
+        ),
+    )
+    consumed = {v for v in (fmt, fail_on_raw) if v}
+    positional = [a for a in args if not a.startswith("-") and a not in consumed]
+    root = Path(positional[0]) if positional else Path(".")
+    if not root.exists():
+        print(f"path does not exist: {root}", file=sys.stderr)
+        return 2
+
+    report = build_ci_report(root, project, fail_on=fail_on)
+
+    if fmt == "json":
+        print(json.dumps(ci_to_dict(report), indent=2))
+    elif fmt == "markdown":
+        print(render_markdown(report), end="")
+    elif fmt == "github":
+        # Inline annotations + a job summary when running inside GitHub Actions.
+        emit_github_annotations(report)
+        summary_path = _os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary_path:
+            with open(summary_path, "a", encoding="utf-8") as fh:
+                fh.write(render_markdown(report))
+    else:
+        render_ci(report)
+
+    return 0 if report.passed else 1
 
 
 def _attest_command(args: list[str]) -> int:

@@ -8,6 +8,7 @@ from typing import Any
 from rich.console import Console
 from rich.markup import escape
 
+from ladex.engine.ci import CiReport
 from ladex.engine.detect import Detection
 from ladex.engine.enrich import EnrichmentReport
 from ladex.engine.enrich.models import EnrichedModel, EnrichedPackage
@@ -194,6 +195,68 @@ def _render_obligation(ob: Obligation) -> list[str]:
         hint = f" [dim](declare with {yes} / {no})[/dim]" if yes else ""
         lines.append(f"    [yellow]unresolved:[/yellow] {escape(keys)}{hint}")
     return lines
+
+
+def render_ci(report: CiReport, console: Console | None = None) -> None:
+    """Human-readable CI gate report for the terminal."""
+    console = console or Console()
+    verdict = "[green]PASS[/green]" if report.passed else "[red]ACTION REQUIRED[/red]"
+    console.print(
+        f"[bold]Ladex CI:[/bold] {verdict} "
+        f"[dim]({len(report.scan.detections)} detection(s), "
+        f"{len(report.gaps)} gap(s), fail-on={report.fail_on.value})[/dim]"
+    )
+    if report.gaps:
+        console.print("\n[bold]Action required[/bold]")
+        for g in report.gaps:
+            console.print(f"  [red]-[/red] [{g.kind}] {escape(g.summary)}")
+            console.print(f"      [dim]{escape(g.remedy)}[/dim]")
+    if report.warnings:
+        console.print("\n[bold]May apply[/bold]")
+        for w in report.warnings:
+            console.print(f"  [yellow]-[/yellow] {escape(w)}")
+    if not report.gaps and not report.warnings:
+        console.print("[dim]No open obligations or documentation gaps.[/dim]")
+
+
+def emit_github_annotations(report: CiReport) -> None:
+    """Print GitHub Actions workflow commands so gaps show inline on the PR."""
+    for g in report.gaps:
+        # Annotations without a file attach to the run; provenance gaps map to detections.
+        loc = _detection_location(report, g.subject)
+        prefix = f"::warning {loc}::" if loc else "::warning title=Ladex::"
+        print(f"{prefix}Ladex: {g.summary}. {g.remedy}")
+    for w in report.warnings:
+        print(f"::notice title=Ladex::{w}")
+
+
+def _detection_location(report: CiReport, evidence: str) -> str:
+    for det in report.scan.detections:
+        if det.evidence == evidence:
+            rel = _relativize(det.path, report.root)
+            return f"file={rel},line={det.span.start_line},title=Ladex"
+    return ""
+
+
+def ci_to_dict(report: CiReport) -> dict[str, Any]:
+    """Serialize the CI report for ``--format json``."""
+    return {
+        "passed": report.passed,
+        "fail_on": report.fail_on.value,
+        "detections": len(report.scan.detections),
+        "gaps": [
+            {
+                "kind": g.kind,
+                "subject": g.subject,
+                "summary": g.summary,
+                "remedy": g.remedy,
+                "citation": g.citation,
+            }
+            for g in report.gaps
+        ],
+        "warnings": list(report.warnings),
+        "summary": report.scan.counts_by_component_type(),
+    }
 
 
 def _truncate(text: str, limit: int) -> str:
