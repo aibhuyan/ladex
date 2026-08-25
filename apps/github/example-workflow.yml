@@ -1,0 +1,24 @@
+# Copy this into your repo as .github/workflows/ladex.yml
+name: Ladex
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write # to post the sticky report comment
+
+jobs:
+  ladex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aibhuyan/ladex/apps/github@v0.1.3
+        with:
+          path: "."
+          # Gate strictness: none (report only) | gaps (default) | strict.
+          fail-on: gaps
+          # Declare project facts so EU AI Act Art. 50 resolves from "may apply" to "applies".
+          # user-facing: "true"
+          # synthetic-content: "false"
+          comment: "true"

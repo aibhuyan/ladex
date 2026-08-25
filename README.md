@@ -98,6 +98,28 @@ infra/main.tf
 Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 ```
 
+## On your pull requests
+
+The GitHub Action runs the same engine as a **merge gate**: it detects AI added in a PR,
+records its EU AI Act obligations, and **fails the check on undocumented provenance** — with a
+sticky comment showing exactly which `ladex attest` command closes each gap.
+
+```yaml
+# .github/workflows/ladex.yml
+on: pull_request
+permissions: { contents: read, pull-requests: write }
+jobs:
+  ladex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aibhuyan/ladex/apps/github@v0.1.3
+        with: { fail-on: gaps }
+```
+
+See [`apps/github/README.md`](apps/github/README.md) for all inputs. Locally, the same gate is
+`ladex ci [PATH] --fail-on gaps` (exit non-zero on open gaps).
+
 ## In your editor
 
 The VS Code extension gives inline diagnostics as you type, nothing on non-AI code — and the

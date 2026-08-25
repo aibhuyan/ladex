@@ -1,0 +1,88 @@
+name: "Ladex AI Governance"
+description: "Detect AI components on a PR, record obligations, and gate on undocumented provenance."
+branding:
+  icon: "file-text"
+  color: "green"
+
+inputs:
+  path:
+    description: "Path to scan."
+    default: "."
+  fail-on:
+    description: "Gate strictness: none | gaps | strict."
+    default: "gaps"
+  user-facing:
+    description: "Declare whether the system is user-facing: true | false | '' (unknown)."
+    default: ""
+  synthetic-content:
+    description: "Declare whether it generates synthetic content: true | false | '' (unknown)."
+    default: ""
+  comment:
+    description: "Post/update a sticky PR comment with the report."
+    default: "true"
+  ladex-version:
+    description: "Pin a ladex version (e.g. 0.1.3). Empty installs the latest."
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install Ladex
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.ladex-version }}" ]; then
+          pip install "ladex==${{ inputs.ladex-version }}"
+        else
+          pip install ladex
+        fi
+
+    - name: Run Ladex CI
+      id: run
+      shell: bash
+      run: |
+        set +e
+        FLAGS=""
+        case "${{ inputs.user-facing }}" in
+          true) FLAGS="$FLAGS --user-facing" ;;
+          false) FLAGS="$FLAGS --not-user-facing" ;;
+        esac
+        case "${{ inputs.synthetic-content }}" in
+          true) FLAGS="$FLAGS --synthetic-content" ;;
+          false) FLAGS="$FLAGS --no-synthetic-content" ;;
+        esac
+        # Gate run: annotations + job summary + real exit code.
+        ladex ci "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}" --format github $FLAGS
+        echo "exit=$?" >> "$GITHUB_OUTPUT"
+        # Report run (never fails) — markdown for the PR comment.
+        ladex ci "${{ inputs.path }}" --fail-on none --format markdown $FLAGS > "$RUNNER_TEMP/ladex.md"
+
+    - name: Upsert PR comment
+      if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      env:
+        LADEX_MD: ${{ runner.temp }}/ladex.md
+      with:
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- ladex-report -->';
+          const body = marker + '\n' + fs.readFileSync(process.env.LADEX_MD, 'utf8');
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            owner, repo, issue_number,
+          });
+          const existing = comments.find(c => c.body && c.body.includes(marker));
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+
+    - name: Enforce gate
+      shell: bash
+      run: exit ${{ steps.run.outputs.exit }}
