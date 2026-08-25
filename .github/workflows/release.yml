@@ -1,10 +1,10 @@
 name: release
 
-# Push a tag like `v0.1.2` to cut a full release: per-OS binaries + wheel are built, a
-# GitHub Release is created with them attached, and the wheel is published to PyPI.
-# `workflow_dispatch` rebuilds the binaries/wheel for the CURRENT pyproject version and
-# attaches them to that version's release WITHOUT touching PyPI — handy for backfilling
-# mac/Linux binaries onto an already-published version.
+# Push a tag like `v0.1.3` to cut a full release: per-OS binaries, per-platform VS Code
+# extensions (with the engine bundled), and the wheel are built; a GitHub Release is created
+# with them attached; and the wheel is published to PyPI.
+# `workflow_dispatch` rebuilds everything for the CURRENT pyproject version and attaches it to
+# that version's release WITHOUT touching PyPI — handy for backfilling assets.
 
 on:
   push:
@@ -38,20 +38,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, target: linux-x64 }
-          - { os: macos-latest, target: macos-arm64 }
-          - { os: windows-latest, target: windows-x64 }
+          - { os: ubuntu-latest, target: linux-x64, vscode_target: linux-x64 }
+          - { os: macos-latest, target: macos-arm64, vscode_target: darwin-arm64 }
+          - { os: windows-latest, target: windows-x64, vscode_target: win32-x64 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv sync --frozen
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Build single binary
         shell: bash
         working-directory: packaging
         run: uv run pyinstaller ladex.spec --distpath ../dist-bin --workpath ../build-bin --noconfirm
+
       - name: Smoke-test the frozen binary
         shell: bash
         run: |
@@ -60,7 +64,26 @@ jobs:
           "$BIN" --version
           "$BIN" scan tests/fixtures/sample_repo
           "$BIN" scan tests/fixtures/iac
-      - name: Name the asset
+
+      - name: Package platform VS Code extension (engine bundled)
+        shell: bash
+        run: |
+          V="${{ needs.meta.outputs.version }}"
+          EXT=extensions/vscode
+          mkdir -p "$EXT/bin"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp dist-bin/ladex.exe "$EXT/bin/ladex.exe"
+          else
+            cp dist-bin/ladex "$EXT/bin/ladex"
+            chmod +x "$EXT/bin/ladex"
+          fi
+          cd "$EXT"
+          npm ci
+          npm version "$V" --no-git-tag-version --allow-same-version
+          npx vsce package --target "${{ matrix.vscode_target }}" \
+            -o "$GITHUB_WORKSPACE/ladex-$V-${{ matrix.vscode_target }}.vsix"
+
+      - name: Name the raw binary asset
         id: rn
         shell: bash
         run: |
@@ -70,10 +93,41 @@ jobs:
           if [ "${{ runner.os }}" = "Windows" ]; then SRC=dist-bin/ladex.exe; OUT="$OUT.exe"; fi
           mv "$SRC" "$OUT"
           echo "asset=$OUT" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
           path: ${{ steps.rn.outputs.asset }}
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.vscode_target }}
+          path: ladex-*-${{ matrix.vscode_target }}.vsix
+          if-no-files-found: error
+
+  vsix-universal:
+    # A target-less VSIX (no bundled engine) for platforms we don't ship a binary for
+    # (e.g. Intel Mac, linux-arm64) — it uses a `ladex` on PATH. Marketplace serves this
+    # only when no platform-specific build matches.
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Package universal extension
+        shell: bash
+        run: |
+          V="${{ needs.meta.outputs.version }}"
+          cd extensions/vscode
+          npm ci
+          npm version "$V" --no-git-tag-version --allow-same-version
+          npx vsce package -o "$GITHUB_WORKSPACE/ladex-$V-universal.vsix"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix-universal
+          path: ladex-*-universal.vsix
           if-no-files-found: error
 
   wheel:
@@ -92,7 +146,7 @@ jobs:
           if-no-files-found: error
 
   github-release:
-    needs: [meta, binaries, wheel]
+    needs: [meta, binaries, vsix-universal, wheel]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -102,7 +156,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p upload
-          find artifacts -type f \( -name 'ladex-*' -o -name '*.whl' -o -name '*.tar.gz' \) \
+          find artifacts -type f \
+            \( -name 'ladex-*' -o -name '*.whl' -o -name '*.tar.gz' -o -name '*.vsix' \) \
             -exec cp {} upload/ \;
           ls -la upload
       - uses: softprops/action-gh-release@v2

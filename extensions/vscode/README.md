@@ -9,33 +9,30 @@ the editor can never disagree with the gate.
 
 ## Install
 
-**1. Install the Ladex engine** (the extension talks to it):
+The platform builds **bundle the Ladex engine** — one install, no separate `pip install`.
 
-```bash
-pip install ladex        # or:  uv tool install ladex  /  pipx install ladex
-ladex --version          # verify it's on your PATH
-```
+- **From the Marketplace:** search **“Ladex”** in the Extensions panel *(once published)* —
+  VS Code automatically installs the build for your OS/CPU.
+- **From a `.vsix`:** download the one matching your platform from the
+  [Releases page](https://github.com/aibhuyan/ladex/releases) —
+  `ladex-<version>-{win32-x64,darwin-arm64,linux-x64}.vsix` — then Extensions panel → `⋯` →
+  **Install from VSIX…** (or `code --install-extension <file>.vsix`).
 
-**2. Install the extension** — either:
+Open any Python file that uses an AI library — diagnostics appear as you type. No engine setup.
 
-- **From a `.vsix`:** download `ladex-<version>.vsix` from the
-  [Releases page](https://github.com/aibhuyan/ladex/releases), then in VS Code open the
-  Extensions panel → `⋯` menu → **Install from VSIX…** (or run
-  `code --install-extension ladex-<version>.vsix`).
-- **From the Marketplace:** search **“Ladex”** in the Extensions panel *(once published)*.
-
-Open any Python file that uses an AI library — diagnostics appear as you type.
+> On a platform without a bundled build (e.g. Intel Mac, linux-arm64), install
+> `ladex-<version>-universal.vsix` and provide the engine yourself: `pip install ladex`.
 
 ## Configuration
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `ladex.serverCommand` | `ladex` | Command that starts the engine. Set to a full path if `ladex` isn't on PATH. |
-| `ladex.serverArgs` | `["serve"]` | Arguments passed to it. |
+| `ladex.serverCommand` | `ladex` | Overrides the engine command. Leave as `ladex` to use the bundled binary (falling back to a `ladex` on PATH); set a full path to force a specific engine. |
+| `ladex.serverArgs` | `["serve"]` | Arguments passed to the engine command. |
 
-If you see *“could not start 'ladex serve'”*, the engine isn't on your PATH — install it
-(step 1) or point `ladex.serverCommand` at the executable
-(e.g. `.../.venv/Scripts/ladex.exe`).
+The extension resolves the engine in this order: an explicit non-default `serverCommand` →
+the **bundled binary** (`bin/ladex`) → a `ladex` on your PATH. If it can't start any, it shows
+a message telling you to `pip install ladex` or set `ladex.serverCommand`.
 
 ## Development (contributing to the extension)
 
