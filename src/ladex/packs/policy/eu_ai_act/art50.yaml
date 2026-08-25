@@ -40,3 +40,45 @@ rules:
         generates_synthetic_content: true
     references:
       - "https://artificialintelligenceact.eu/article/50/"
+
+  - id: art-50-3-emotion-recognition-disclosure
+    title: Inform people subject to emotion recognition
+    citation: Art. 50(3)
+    obligation: >-
+      Deployers of an emotion recognition system must inform the natural persons exposed to
+      it of its operation (and process any personal data per GDPR).
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        emotion_recognition: true
+    references:
+      - "https://artificialintelligenceact.eu/article/50/"
+
+  - id: art-50-3-biometric-categorization-disclosure
+    title: Inform people subject to biometric categorization
+    citation: Art. 50(3)
+    obligation: >-
+      Deployers of a biometric categorization system must inform the natural persons exposed
+      to it of its operation.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        biometric_categorization: true
+    references:
+      - "https://artificialintelligenceact.eu/article/50/"
+
+  - id: art-50-4-deepfake-labeling
+    title: Label deep-fake / synthetic media
+    citation: Art. 50(4)
+    obligation: >-
+      Deployers generating or manipulating image, audio, or video content constituting a
+      deep fake must disclose that the content has been artificially generated or manipulated.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        deepfakes: true
+    references:
+      - "https://artificialintelligenceact.eu/article/50/"

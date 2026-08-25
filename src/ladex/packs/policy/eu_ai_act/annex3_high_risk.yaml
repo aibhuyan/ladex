@@ -1,0 +1,106 @@
+# Ladex policy bundle — EU AI Act high-risk obligations (Annex III + Articles 8-15).
+#
+# Whether a system is high-risk is an Annex III use-case determination a human declares
+# (`high_risk: true` in .ladex/project.yaml) — it cannot be derived from code. When declared,
+# the provider obligations of Articles 9-15 apply; each needs a human attestation of how it
+# is met (`ladex attest annex3-... --claim satisfied`).
+schema_version: 1
+id: eu-ai-act-annex-iii
+regulation: EU AI Act
+version: 0.1.0
+rules:
+  - id: annex3-risk-management
+    title: Risk management system
+    citation: Art. 9
+    obligation: >-
+      Establish, document, and maintain a risk management system across the AI system's
+      lifecycle.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/9/"
+
+  - id: annex3-data-governance
+    title: Data and data governance
+    citation: Art. 10
+    obligation: >-
+      Train, validate, and test on data sets meeting quality criteria, with appropriate data
+      governance and bias examination.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/10/"
+
+  - id: annex3-technical-documentation
+    title: Technical documentation
+    citation: Art. 11
+    obligation: >-
+      Draw up and keep up to date technical documentation demonstrating conformity (Annex IV).
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/11/"
+
+  - id: annex3-record-keeping
+    title: Record-keeping (logging)
+    citation: Art. 12
+    obligation: >-
+      Design the system for automatic recording of events (logs) over its lifetime to ensure
+      traceability.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/12/"
+
+  - id: annex3-transparency-to-deployers
+    title: Transparency and instructions for use
+    citation: Art. 13
+    obligation: >-
+      Provide deployers with clear instructions for use enabling correct, safe operation and
+      interpretation of output.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/13/"
+
+  - id: annex3-human-oversight
+    title: Human oversight
+    citation: Art. 14
+    obligation: >-
+      Design the system so it can be effectively overseen by natural persons during use.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/14/"
+
+  - id: annex3-accuracy-robustness-security
+    title: Accuracy, robustness, and cybersecurity
+    citation: Art. 15
+    obligation: >-
+      Achieve appropriate levels of accuracy, robustness, and cybersecurity, consistent
+      throughout the lifecycle.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        high_risk: true
+    references:
+      - "https://artificialintelligenceact.eu/article/15/"

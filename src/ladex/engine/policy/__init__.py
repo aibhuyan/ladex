@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from ladex.engine.policy.context import ComponentFact, ProjectContext, component_facts
+from ladex.engine.policy.context import (
+    PROJECT_FILE,
+    ComponentFact,
+    ProjectContext,
+    ProjectContextError,
+    component_facts,
+    load_project_context,
+    project_template,
+)
 from ladex.engine.policy.evaluate import evaluate
 from ladex.engine.policy.loader import (
     PolicyError,
@@ -21,8 +29,10 @@ from ladex.engine.policy.report import Obligation, ObligationStatus, PolicyRepor
 from ladex.engine.policy.service import check_scan
 
 __all__ = [
+    "PROJECT_FILE",
     "AppliesWhen",
     "ComponentFact",
+    "ProjectContextError",
     "Obligation",
     "ObligationStatus",
     "PolicyBundle",
@@ -35,6 +45,8 @@ __all__ = [
     "check_scan",
     "component_facts",
     "evaluate",
+    "load_project_context",
+    "project_template",
     "load_bundle_file",
     "load_builtin_bundles",
     "parse_bundle",

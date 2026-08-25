@@ -45,7 +45,7 @@ attestations for the fields no tool can derive.
 ```
 detect (Python + Terraform + Kubernetes)
   → enrich    PyPI licenses · OSV CVEs · Hugging Face model cards   (cached, offline-capable)
-  → obligate  EU AI Act Art. 50 — applies / may-apply / silent; derivable vs. attestation
+  → obligate  EU AI Act (Art. 5 bans · Annex III/Art. 8-15 high-risk · Art. 50 · Art. 53 GPAI)
   → BOM       deterministic CycloneDX ML-BOM that diffs cleanly in PRs
   → attest    in-toto/DSSE signature fills an UNDOCUMENTED gap with a verifiable declaration
 
@@ -88,7 +88,10 @@ ladex scan path/to/repo
 # Add real facts: licenses, CVEs, model cards (cached; --offline works from cache)
 ladex scan path/to/repo --enrich
 
-# What does it obligate under the EU AI Act? (declare project facts to resolve "may apply")
+# Declare your EU AI Act classification once (high-risk? GPAI provider? prohibited uses?)
+ladex policy init path/to/repo        # writes .ladex/project.yaml to fill in & commit
+
+# What does it obligate under the EU AI Act? (reads .ladex/project.yaml; flags override)
 ladex policy check path/to/repo --user-facing
 
 # Produce the committable, deterministic ML-BOM

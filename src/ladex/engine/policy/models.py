@@ -19,7 +19,26 @@ from ladex.engine.taxonomy.models import ComponentType
 _ID_RE = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 
 #: Project-context fields a rule may condition on. Kept in sync with ProjectContext.
-ALLOWED_PROJECT_KEYS: frozenset[str] = frozenset({"user_facing", "generates_synthetic_content"})
+#: All are tri-state booleans (True / False / None=undeclared); a human declares them, since
+#: EU AI Act classification cannot be derived from code.
+ALLOWED_PROJECT_KEYS: frozenset[str] = frozenset(
+    {
+        # transparency (Art. 50)
+        "user_facing",
+        "generates_synthetic_content",
+        "emotion_recognition",
+        "biometric_categorization",
+        "deepfakes",
+        # risk classification
+        "high_risk",  # Annex III use case
+        "gpai_provider",  # provides/trains a general-purpose AI model (Art. 53)
+        # prohibited practices (Art. 5)
+        "social_scoring",
+        "manipulative_techniques",
+        "untargeted_facial_scraping",
+        "realtime_remote_biometric_id",
+    }
+)
 
 CURRENT_POLICY_SCHEMA_VERSION = 1
 
@@ -35,6 +54,7 @@ class Severity(StrEnum):
     INFO = "info"
     ADVISORY = "advisory"
     REQUIRED = "required"
+    PROHIBITED = "prohibited"  # Art. 5 bans — cannot be attested away
 
 
 class AppliesWhen(BaseModel):

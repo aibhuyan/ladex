@@ -21,9 +21,12 @@ from pathlib import Path
 from ladex.engine.attest import OBLIGATION_CLAIM, AttestationStore, verify_attestation
 from ladex.engine.enrich.hfhub import looks_like_repo_id
 from ladex.engine.policy import ProjectContext, check_scan
+from ladex.engine.policy.models import Severity
 from ladex.engine.policy.report import PolicyReport
 from ladex.engine.scan import ScanResult, scan_path
 from ladex.engine.taxonomy.models import ComponentType
+
+_GAP_ORDER = {"prohibited": 0, "provenance": 1, "obligation": 2}
 
 ATTESTABLE_MODEL_CLAIMS = ("provenance", "consent_basis")
 
@@ -117,10 +120,23 @@ def build_ci_report(
                 )
             )
 
-    # Obligation gaps: applicable obligations that need a human attestation and don't yet
-    # have a verified "satisfied" attestation for the rule.
+    # Obligation gaps. Prohibited practices (Art. 5) are a hard stop — they can NEVER be
+    # attested away. Other applicable requires-attestation obligations close on a verified
+    # "satisfied" attestation for the rule.
     for ob in policy.applies:
-        if ob.is_gap and (ob.rule_id, OBLIGATION_CLAIM) not in verified:
+        if not ob.is_gap:
+            continue
+        if ob.severity is Severity.PROHIBITED:
+            gaps.append(
+                Gap(
+                    kind="prohibited",
+                    subject=ob.rule_id,
+                    summary=f"{ob.citation}: {ob.title}",
+                    remedy="Remove it - Art. 5 prohibits this; it cannot be attested away.",
+                    citation=ob.citation,
+                )
+            )
+        elif (ob.rule_id, OBLIGATION_CLAIM) not in verified:
             gaps.append(
                 Gap(
                     kind="obligation",
@@ -133,6 +149,8 @@ def build_ci_report(
                     citation=ob.citation,
                 )
             )
+
+    gaps.sort(key=lambda g: (_GAP_ORDER.get(g.kind, 9), g.subject))
 
     warnings = tuple(
         f"{ob.citation}: {ob.title} may apply - declare {', '.join(ob.unresolved)}"

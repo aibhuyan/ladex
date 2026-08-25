@@ -1,0 +1,64 @@
+# Ladex policy bundle — EU AI Act, Article 53 (general-purpose AI model providers).
+#
+# Applies when you *provide or train* a general-purpose AI model (`gpai_provider: true`) —
+# a role a human declares. Each duty needs a human attestation of how it is met.
+schema_version: 1
+id: eu-ai-act-art-53
+regulation: EU AI Act
+version: 0.1.0
+rules:
+  - id: art-53-technical-documentation
+    title: GPAI technical documentation
+    citation: Art. 53(1)(a)
+    obligation: >-
+      Draw up and keep up to date technical documentation of the model, including its
+      training and testing process and evaluation results (Annex XI).
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        gpai_provider: true
+    references:
+      - "https://artificialintelligenceact.eu/article/53/"
+
+  - id: art-53-downstream-information
+    title: Information for downstream providers
+    citation: Art. 53(1)(b)
+    obligation: >-
+      Make available to downstream providers information and documentation enabling them to
+      understand the model's capabilities and limitations and comply with their obligations.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        gpai_provider: true
+    references:
+      - "https://artificialintelligenceact.eu/article/53/"
+
+  - id: art-53-copyright-policy
+    title: EU copyright compliance policy
+    citation: Art. 53(1)(c)
+    obligation: >-
+      Put in place a policy to comply with Union copyright law, including honouring
+      text-and-data-mining reservations of rights.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        gpai_provider: true
+    references:
+      - "https://artificialintelligenceact.eu/article/53/"
+
+  - id: art-53-training-content-summary
+    title: Public summary of training content
+    citation: Art. 53(1)(d)
+    obligation: >-
+      Draw up and make publicly available a sufficiently detailed summary of the content used
+      to train the model, per the AI Office template.
+    verification: requires_attestation
+    severity: required
+    applies_when:
+      project:
+        gpai_provider: true
+    references:
+      - "https://artificialintelligenceact.eu/article/53/"

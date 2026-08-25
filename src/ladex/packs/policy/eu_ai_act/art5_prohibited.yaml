@@ -1,0 +1,66 @@
+# Ladex policy bundle — EU AI Act, Article 5 (prohibited practices).
+#
+# These are outright bans. When a project declares one of these uses, Ladex flags it as
+# PROHIBITED — a stop sign, not a documentation gap. It cannot be "attested away": the only
+# resolution is to remove the practice (or correct a mis-declaration). Whether a use falls
+# under the prohibition is a legal determination a human declares; Ladex surfaces it loudly.
+schema_version: 1
+id: eu-ai-act-art-5
+regulation: EU AI Act
+version: 0.1.0
+rules:
+  - id: art-5-social-scoring
+    title: Social scoring of natural persons
+    citation: Art. 5(1)(c)
+    obligation: >-
+      Prohibited: evaluating or classifying people over time based on social behaviour or
+      personal characteristics leading to detrimental or unjustified treatment. Remove it.
+    verification: requires_attestation
+    severity: prohibited
+    applies_when:
+      project:
+        social_scoring: true
+    references:
+      - "https://artificialintelligenceact.eu/article/5/"
+
+  - id: art-5-manipulative-techniques
+    title: Subliminal or manipulative techniques
+    citation: Art. 5(1)(a)
+    obligation: >-
+      Prohibited: subliminal, purposefully manipulative or deceptive techniques that
+      materially distort behaviour and cause significant harm. Remove it.
+    verification: requires_attestation
+    severity: prohibited
+    applies_when:
+      project:
+        manipulative_techniques: true
+    references:
+      - "https://artificialintelligenceact.eu/article/5/"
+
+  - id: art-5-untargeted-facial-scraping
+    title: Untargeted scraping of facial images
+    citation: Art. 5(1)(e)
+    obligation: >-
+      Prohibited: creating or expanding facial recognition databases through untargeted
+      scraping of facial images from the internet or CCTV. Remove it.
+    verification: requires_attestation
+    severity: prohibited
+    applies_when:
+      project:
+        untargeted_facial_scraping: true
+    references:
+      - "https://artificialintelligenceact.eu/article/5/"
+
+  - id: art-5-realtime-remote-biometric-id
+    title: Real-time remote biometric identification in public
+    citation: Art. 5(1)(h)
+    obligation: >-
+      Prohibited (save narrow law-enforcement exceptions): real-time remote biometric
+      identification in publicly accessible spaces. Remove it or confirm a lawful exception.
+    verification: requires_attestation
+    severity: prohibited
+    applies_when:
+      project:
+        realtime_remote_biometric_id: true
+    references:
+      - "https://artificialintelligenceact.eu/article/5/"

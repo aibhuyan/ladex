@@ -17,8 +17,12 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ladex import __version__
+
+if TYPE_CHECKING:
+    from ladex.engine.policy import ProjectContext
 from ladex.engine.detect import PythonDetector
 from ladex.engine.scan import scan_path
 from ladex.engine.taxonomy import (
@@ -152,9 +156,10 @@ def _tristate(args: list[str], yes: str, no: str) -> bool | None:
 def _policy_command(args: list[str]) -> int:
     if not args or args[0] in {"-h", "--help"}:
         print(
-            "usage: ladex policy {check|list} [PATH] [--json]\n"
+            "usage: ladex policy {check|list|init} [PATH] [--json]\n"
+            "  init  writes .ladex/project.yaml (declare EU AI Act classification)\n"
             "  project facts: --user-facing/--not-user-facing, "
-            "--synthetic-content/--no-synthetic-content",
+            "--synthetic-content/--no-synthetic-content (or the profile file)",
             file=sys.stderr,
         )
         return 0 if args else 2
@@ -163,8 +168,43 @@ def _policy_command(args: list[str]) -> int:
         return _policy_list()
     if sub == "check":
         return _policy_check(rest)
+    if sub == "init":
+        return _policy_init(rest)
     print(f"unknown policy subcommand: {sub!r}", file=sys.stderr)
     return 2
+
+
+def _policy_init(args: list[str]) -> int:
+    from ladex.engine.policy import PROJECT_FILE, project_template
+
+    positional = [a for a in args if not a.startswith("-")]
+    root = Path(positional[0]) if positional else Path(".")
+    target = root / PROJECT_FILE
+    if target.exists():
+        print(f"{target} already exists — leaving it untouched.", file=sys.stderr)
+        return 0
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(project_template(), encoding="utf-8")
+    print(f"wrote {target}\nEdit it to declare your EU AI Act classification, then commit it.")
+    return 0
+
+
+def _project_from(root: Path, args: list[str]) -> ProjectContext | None:
+    """Load .ladex/project.yaml, then let CLI flags override declared facts."""
+    from ladex.engine.policy import ProjectContext, ProjectContextError, load_project_context
+
+    overrides = ProjectContext(
+        user_facing=_tristate(args, "--user-facing", "--not-user-facing"),
+        generates_synthetic_content=_tristate(
+            args, "--synthetic-content", "--no-synthetic-content"
+        ),
+    )
+    try:
+        base = load_project_context(root)
+    except ProjectContextError as exc:
+        print(f"INVALID: {exc}", file=sys.stderr)
+        return None
+    return base.merge(overrides)
 
 
 def _policy_list() -> int:
@@ -187,17 +227,16 @@ def _policy_check(args: list[str]) -> int:
     from ladex.engine.policy import PolicyError, ProjectContext, check_scan
 
     as_json = "--json" in args
-    project = ProjectContext(
-        user_facing=_tristate(args, "--user-facing", "--not-user-facing"),
-        generates_synthetic_content=_tristate(
-            args, "--synthetic-content", "--no-synthetic-content"
-        ),
-    )
     positional = [a for a in args if not a.startswith("-")]
     root = Path(positional[0]) if positional else Path(".")
     if not root.exists():
         print(f"path does not exist: {root}", file=sys.stderr)
         return 2
+
+    project = _project_from(root, args)
+    if project is None:
+        return 1
+    assert isinstance(project, ProjectContext)
 
     try:
         result = scan_path(root)
@@ -243,18 +282,17 @@ def _ci_command(args: list[str]) -> int:
         print(f"invalid --fail-on {fail_on_raw!r}; choose none|gaps|strict", file=sys.stderr)
         return 2
 
-    project = ProjectContext(
-        user_facing=_tristate(args, "--user-facing", "--not-user-facing"),
-        generates_synthetic_content=_tristate(
-            args, "--synthetic-content", "--no-synthetic-content"
-        ),
-    )
     consumed = {v for v in (fmt, fail_on_raw) if v}
     positional = [a for a in args if not a.startswith("-") and a not in consumed]
     root = Path(positional[0]) if positional else Path(".")
     if not root.exists():
         print(f"path does not exist: {root}", file=sys.stderr)
         return 2
+
+    project = _project_from(root, args)
+    if project is None:
+        return 1
+    assert isinstance(project, ProjectContext)
 
     report = build_ci_report(root, project, fail_on=fail_on)
 

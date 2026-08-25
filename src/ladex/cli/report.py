@@ -224,7 +224,8 @@ def emit_github_annotations(report: CiReport) -> None:
     for g in report.gaps:
         # Annotations without a file attach to the run; provenance gaps map to detections.
         loc = _detection_location(report, g.subject)
-        prefix = f"::warning {loc}::" if loc else "::warning title=Ladex::"
+        level = "error" if g.kind == "prohibited" else "warning"
+        prefix = f"::{level} {loc}::" if loc else f"::{level} title=Ladex::"
         print(f"{prefix}Ladex: {g.summary}. {g.remedy}")
     for w in report.warnings:
         print(f"::notice title=Ladex::{w}")
