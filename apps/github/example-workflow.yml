@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aibhuyan/ladex/apps/github@v0.1.3
+      - uses: aibhuyan/ladex/apps/github@v0.1.4
         with:
           path: "."
           # Gate strictness: none (report only) | gaps (default) | strict.

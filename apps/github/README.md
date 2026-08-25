@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aibhuyan/ladex/apps/github@v0.1.3
+      - uses: aibhuyan/ladex/apps/github@v0.1.4
         with:
           fail-on: gaps          # none | gaps | strict
           # user-facing: "true"  # declare project facts for Art. 50

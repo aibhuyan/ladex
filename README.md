@@ -8,7 +8,7 @@
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.3-3b82f6?style=flat" alt="version 0.1.3">
+  <img src="https://img.shields.io/badge/version-0.1.4-3b82f6?style=flat" alt="version 0.1.4">
   <img src="https://img.shields.io/github/actions/workflow/status/aibhuyan/ladex/ci.yml?branch=main&style=flat&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
@@ -49,7 +49,7 @@ detect (Python + Terraform + Kubernetes)
   → BOM       deterministic CycloneDX ML-BOM that diffs cleanly in PRs
   → attest    in-toto/DSSE signature fills an UNDOCUMENTED gap with a verifiable declaration
 
-surfaces:  CLI   +   VS Code (LSP, inline diagnostics as you type)   — one shared engine
+surfaces:  CLI   +   VS Code (LSP)   +   GitHub PR check   — one shared engine
 ```
 
 ## Install
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aibhuyan/ladex/apps/github@v0.1.3
+      - uses: aibhuyan/ladex/apps/github@v0.1.4
         with: { fail-on: gaps }
 ```
 
@@ -135,17 +135,17 @@ Then open any Python file that uses an AI library. See
 
 ## Design principles
 
-- **One engine, three surfaces.** The IDE, CLI, and (v2) PR check all call the same Python
+- **One engine, three surfaces.** The IDE, CLI, and GitHub PR check all call the same Python
   engine — the editor can never disagree with the gate.
 - **Ruthless silence.** If a line isn't AI-relevant, Ladex says nothing.
 - **Honest gaps.** `UNDOCUMENTED` is a valid, valuable output. A green checkmark only appears
   when something was actually verified — or signed by a named human.
 - **Policy as versioned data.** Taxonomy and EU AI Act rules are updatable bundles, not code.
 
-## Scope (v1)
+## Scope
 
-**Python + Terraform + Kubernetes detection. EU AI Act. Two surfaces (CLI + VS Code).**
-The GitHub PR check and evidence graph are v2.
+**Python + Terraform + Kubernetes detection. EU AI Act. Three surfaces — CLI, VS Code, and a
+GitHub PR check.** The Postgres-backed evidence graph is the remaining v2 item.
 
 ## Development
 
