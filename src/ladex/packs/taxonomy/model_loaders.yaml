@@ -64,3 +64,20 @@ rules:
     description: A string literal names a sentence-transformers model repository.
     match: { kind: string, pattern: "^sentence-transformers/[\\w.-]+$" }
     tags: [open-weights, embeddings]
+
+  - id: sentence-transformers.import
+    name: sentence-transformers import
+    component_type: model_loader
+    provider: Hugging Face
+    description: The application imports the sentence-transformers library.
+    match: { kind: import, module: sentence_transformers }
+    tags: [open-weights, local, embeddings]
+    references: ["https://www.sbert.net/"]
+
+  - id: sentence-transformers.model
+    name: SentenceTransformer construction
+    component_type: model_loader
+    provider: Hugging Face
+    description: A SentenceTransformer embedding model is loaded.
+    match: { kind: call, target: sentence_transformers.SentenceTransformer }
+    tags: [open-weights, local, embeddings, provenance-unknown]

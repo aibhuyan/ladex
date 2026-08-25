@@ -53,10 +53,25 @@ def test_expected_headline_rules_are_present() -> None:
         assert taxonomy.by_id(rule_id) is not None, f"missing rule {rule_id!r}"
 
 
-def test_all_six_target_libraries_are_covered() -> None:
+def test_all_target_providers_are_covered() -> None:
     taxonomy = load_builtin_taxonomy()
     providers = {r.provider for r in taxonomy.rules}
-    assert {"OpenAI", "Anthropic", "LangChain", "Hugging Face", "Pinecone"} <= providers
+    assert {
+        "OpenAI",
+        "Anthropic",
+        "LangChain",
+        "Hugging Face",
+        "Pinecone",
+        # added after the dogfood pass against a real repo
+        "Google",
+        "Cohere",
+        "Mistral",
+        "LiteLLM",
+        "Ollama",
+        "Chroma",
+        "Weaviate",
+        "Qdrant",
+    } <= providers
 
 
 def test_openai_model_id_pattern_matches_and_rejects() -> None:

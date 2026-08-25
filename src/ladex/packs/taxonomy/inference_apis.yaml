@@ -71,3 +71,141 @@ rules:
     description: A string literal names a Claude model.
     match: { kind: string, pattern: "^claude-[a-z0-9.-]+$" }
     tags: [hosted, closed-weights]
+
+  # --- Google Gemini (both SDKs) ---
+  - id: google-gemini.import
+    name: Google Generative AI SDK import
+    component_type: inference_api
+    provider: Google
+    description: The application imports the google-generativeai SDK.
+    match: { kind: import, module: google.generativeai }
+    tags: [hosted, closed-weights]
+    references: ["https://ai.google.dev/gemini-api/docs"]
+
+  - id: google-gemini.model
+    name: Gemini GenerativeModel construction
+    component_type: inference_api
+    provider: Google
+    description: A Gemini model handle is constructed (legacy SDK).
+    match: { kind: call, target: google.generativeai.GenerativeModel }
+    tags: [hosted, closed-weights]
+
+  - id: google-genai.import
+    name: Google GenAI SDK import
+    component_type: inference_api
+    provider: Google
+    description: The application imports the newer google-genai SDK (from google import genai).
+    match: { kind: import, module: google, symbol: genai }
+    tags: [hosted, closed-weights]
+
+  - id: google-genai.client
+    name: Google GenAI client construction
+    component_type: inference_api
+    provider: Google
+    description: A google-genai client is constructed.
+    match: { kind: call, target: google.genai.Client }
+    tags: [hosted, closed-weights]
+
+  - id: google.model-id
+    name: Gemini model identifier
+    component_type: model
+    provider: Google
+    description: A string literal names a Gemini model.
+    match: { kind: string, pattern: "^gemini-[a-z0-9.-]+$" }
+    tags: [hosted, closed-weights]
+
+  # --- Cohere ---
+  - id: cohere.import
+    name: Cohere SDK import
+    component_type: inference_api
+    provider: Cohere
+    description: The application imports the Cohere SDK.
+    match: { kind: import, module: cohere }
+    tags: [hosted, closed-weights]
+    references: ["https://docs.cohere.com/"]
+
+  - id: cohere.client
+    name: Cohere client construction
+    component_type: inference_api
+    provider: Cohere
+    description: A Cohere API client is constructed.
+    match: { kind: call, target: cohere.Client }
+    tags: [hosted, closed-weights]
+
+  - id: cohere.client-v2
+    name: Cohere v2 client construction
+    component_type: inference_api
+    provider: Cohere
+    description: A Cohere v2 API client is constructed.
+    match: { kind: call, target: cohere.ClientV2 }
+    tags: [hosted, closed-weights]
+
+  # --- Mistral ---
+  - id: mistral.import
+    name: Mistral SDK import
+    component_type: inference_api
+    provider: Mistral
+    description: The application imports the Mistral SDK.
+    match: { kind: import, module: mistralai }
+    tags: [hosted, closed-weights]
+    references: ["https://docs.mistral.ai/"]
+
+  - id: mistral.client
+    name: Mistral client construction
+    component_type: inference_api
+    provider: Mistral
+    description: A Mistral API client is constructed.
+    match: { kind: call, target: mistralai.Mistral }
+    tags: [hosted, closed-weights]
+
+  # --- litellm (multi-provider gateway) ---
+  - id: litellm.import
+    name: LiteLLM import
+    component_type: inference_api
+    provider: LiteLLM
+    description: The application imports LiteLLM, a multi-provider LLM gateway.
+    match: { kind: import, module: litellm }
+    tags: [hosted, gateway]
+    references: ["https://docs.litellm.ai/"]
+
+  - id: litellm.completion
+    name: LiteLLM completion call
+    component_type: inference_api
+    provider: LiteLLM
+    description: A completion is requested through LiteLLM.
+    match: { kind: call, target: litellm.completion }
+    tags: [hosted, gateway]
+
+  - id: litellm.acompletion
+    name: LiteLLM async completion call
+    component_type: inference_api
+    provider: LiteLLM
+    description: An async completion is requested through LiteLLM.
+    match: { kind: call, target: litellm.acompletion }
+    tags: [hosted, gateway]
+
+  # --- Ollama (local inference) ---
+  - id: ollama.import
+    name: Ollama import
+    component_type: inference_api
+    provider: Ollama
+    description: The application imports the Ollama client for local models.
+    match: { kind: import, module: ollama }
+    tags: [local, open-weights]
+    references: ["https://github.com/ollama/ollama-python"]
+
+  - id: ollama.chat
+    name: Ollama chat call
+    component_type: inference_api
+    provider: Ollama
+    description: A chat completion is requested from a local Ollama model.
+    match: { kind: call, target: ollama.chat }
+    tags: [local, open-weights]
+
+  - id: ollama.client
+    name: Ollama client construction
+    component_type: inference_api
+    provider: Ollama
+    description: An Ollama client is constructed.
+    match: { kind: call, target: ollama.Client }
+    tags: [local, open-weights]

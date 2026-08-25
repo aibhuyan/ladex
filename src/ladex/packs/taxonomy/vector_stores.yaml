@@ -35,3 +35,81 @@ rules:
     description: A Pinecone Index handle is accessed.
     match: { kind: attribute, target: pinecone.Index }
     tags: [hosted, retrieval]
+
+  # --- Chroma ---
+  - id: chroma.import
+    name: Chroma import
+    component_type: vector_store
+    provider: Chroma
+    description: The application imports chromadb.
+    match: { kind: import, module: chromadb }
+    tags: [retrieval]
+    references: ["https://docs.trychroma.com/"]
+
+  - id: chroma.client
+    name: Chroma in-memory client
+    component_type: vector_store
+    provider: Chroma
+    description: An in-memory Chroma client is constructed.
+    match: { kind: call, target: chromadb.Client }
+    tags: [retrieval]
+
+  - id: chroma.persistent-client
+    name: Chroma persistent client
+    component_type: vector_store
+    provider: Chroma
+    description: A persistent (on-disk) Chroma client is constructed.
+    match: { kind: call, target: chromadb.PersistentClient }
+    tags: [retrieval, local]
+
+  - id: chroma.http-client
+    name: Chroma HTTP client
+    component_type: vector_store
+    provider: Chroma
+    description: A remote Chroma client is constructed.
+    match: { kind: call, target: chromadb.HttpClient }
+    tags: [retrieval, hosted]
+
+  # --- Weaviate ---
+  - id: weaviate.import
+    name: Weaviate import
+    component_type: vector_store
+    provider: Weaviate
+    description: The application imports the Weaviate client.
+    match: { kind: import, module: weaviate }
+    tags: [retrieval]
+    references: ["https://weaviate.io/developers/weaviate/client-libraries/python"]
+
+  - id: weaviate.connect-local
+    name: Weaviate connect_to_local
+    component_type: vector_store
+    provider: Weaviate
+    description: A local Weaviate connection is opened.
+    match: { kind: call, target: weaviate.connect_to_local }
+    tags: [retrieval, local]
+
+  - id: weaviate.connect-cloud
+    name: Weaviate connect_to_weaviate_cloud
+    component_type: vector_store
+    provider: Weaviate
+    description: A Weaviate Cloud connection is opened.
+    match: { kind: call, target: weaviate.connect_to_weaviate_cloud }
+    tags: [retrieval, hosted]
+
+  # --- Qdrant ---
+  - id: qdrant.import
+    name: Qdrant client import
+    component_type: vector_store
+    provider: Qdrant
+    description: The application imports the Qdrant client.
+    match: { kind: import, module: qdrant_client }
+    tags: [retrieval]
+    references: ["https://qdrant.tech/documentation/frameworks/python/"]
+
+  - id: qdrant.client
+    name: Qdrant client construction
+    component_type: vector_store
+    provider: Qdrant
+    description: A Qdrant client is constructed.
+    match: { kind: call, target: qdrant_client.QdrantClient }
+    tags: [retrieval]

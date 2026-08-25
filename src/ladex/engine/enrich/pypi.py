@@ -17,6 +17,9 @@ _PYPI_JSON = "https://pypi.org/pypi/{name}/json"
 # Import module top-level name -> PyPI distribution name, where they differ.
 _DIST_OVERRIDES: dict[str, str] = {
     "huggingface_hub": "huggingface-hub",
+    "weaviate": "weaviate-client",
+    "qdrant_client": "qdrant-client",
+    "sentence_transformers": "sentence-transformers",
 }
 
 
