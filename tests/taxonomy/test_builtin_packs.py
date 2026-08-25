@@ -71,6 +71,8 @@ def test_all_target_providers_are_covered() -> None:
         "Chroma",
         "Weaviate",
         "Qdrant",
+        "Voyage AI",
+        "AWS Bedrock",
     } <= providers
 
 

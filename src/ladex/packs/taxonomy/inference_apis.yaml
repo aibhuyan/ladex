@@ -209,3 +209,39 @@ rules:
     description: An Ollama client is constructed.
     match: { kind: call, target: ollama.Client }
     tags: [local, open-weights]
+
+  # --- Voyage AI (embeddings) ---
+  - id: voyageai.import
+    name: Voyage AI import
+    component_type: embeddings
+    provider: Voyage AI
+    description: The application imports the Voyage AI embeddings SDK.
+    match: { kind: import, module: voyageai }
+    tags: [hosted, embeddings]
+    references: ["https://docs.voyageai.com/"]
+
+  - id: voyageai.client
+    name: Voyage AI client construction
+    component_type: embeddings
+    provider: Voyage AI
+    description: A Voyage AI client is constructed.
+    match: { kind: call, target: voyageai.Client }
+    tags: [hosted, embeddings]
+
+  - id: voyageai.model-id
+    name: Voyage AI model identifier
+    component_type: model
+    provider: Voyage AI
+    description: A string literal names a Voyage AI embedding model.
+    match: { kind: string, pattern: "^voyage-[a-z0-9.-]+$" }
+    tags: [hosted, embeddings]
+
+  # --- AWS Bedrock (arg-aware: only boto3 clients for a Bedrock service count) ---
+  - id: aws-bedrock.client
+    name: AWS Bedrock client
+    component_type: inference_api
+    provider: AWS Bedrock
+    description: A boto3 client is constructed for an AWS Bedrock service.
+    match: { kind: call, target: boto3.client, arg: "^bedrock" }
+    tags: [hosted, closed-weights]
+    references: ["https://docs.aws.amazon.com/bedrock/"]

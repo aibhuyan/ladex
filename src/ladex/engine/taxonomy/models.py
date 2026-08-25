@@ -62,10 +62,29 @@ class ImportMatch(_MatchBase):
 
 
 class CallMatch(_MatchBase):
-    """Match a call whose callee resolves to the dotted path ``target``."""
+    """Match a call whose callee resolves to the dotted path ``target``.
+
+    An optional ``arg`` regex further requires the call's first string-literal argument to
+    match — e.g. ``boto3.client`` only counts as AI when called with ``"bedrock-runtime"``,
+    not ``"s3"``. Without ``arg``, any call of the target matches.
+    """
 
     kind: Literal["call"] = "call"
     target: str = Field(min_length=1, description="Dotted callee, e.g. 'openai.OpenAI'.")
+    arg: str | None = Field(
+        default=None,
+        description="Regex the first string-literal argument must match, e.g. '^bedrock'.",
+    )
+
+    @field_validator("arg")
+    @classmethod
+    def _arg_compiles(cls, value: str | None) -> str | None:
+        if value is not None:
+            try:
+                re.compile(value)
+            except re.error as exc:  # noqa: TRY003 - message is the whole point here
+                raise ValueError(f"invalid arg regex: {exc}") from exc
+        return value
 
 
 class AttributeMatch(_MatchBase):

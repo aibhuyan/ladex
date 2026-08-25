@@ -173,7 +173,17 @@ class PythonDetector:
         resolved = _resolve(_flatten(func, data), bindings)
         if resolved is None:
             return
-        for rule in self._call_targets.get(resolved, ()):
+        rules = self._call_targets.get(resolved, ())
+        if not rules:
+            return
+        first_arg = _first_string_arg(node, data)
+        for rule in rules:
+            match = rule.match
+            assert isinstance(match, CallMatch)
+            if match.arg is not None and (
+                first_arg is None or re.search(match.arg, first_arg) is None
+            ):
+                continue
             out.append(self._make(rule, "call", resolved, func, path))
 
     def _handle_attribute(
@@ -261,3 +271,15 @@ def _module_matches(rule_module: str, imported_module: str) -> bool:
 def _string_value(node: Node, data: bytes) -> str:
     parts = [_text(c, data) for c in node.named_children if c.type == "string_content"]
     return "".join(parts)
+
+
+def _first_string_arg(call: Node, data: bytes) -> str | None:
+    """The value of a call's first argument if it is a plain string literal, else None."""
+    arguments = call.child_by_field_name("arguments")
+    if arguments is None:
+        return None
+    for arg in arguments.named_children:
+        if arg.type == "comment":
+            continue
+        return _string_value(arg, data) if arg.type == "string" else None
+    return None

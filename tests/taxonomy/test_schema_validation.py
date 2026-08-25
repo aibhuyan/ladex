@@ -78,6 +78,27 @@ def test_unknown_match_kind_rejected() -> None:
         parse_pack(text, source="bad")
 
 
+def test_call_match_arg_is_optional_and_validated() -> None:
+    ok = textwrap.dedent(
+        """
+        schema_version: 1
+        name: sample
+        version: 0.1.0
+        rules:
+          - id: bedrock.client
+            name: Bedrock
+            component_type: inference_api
+            match: { kind: call, target: boto3.client, arg: "^bedrock" }
+        """
+    )
+    pack = parse_pack(ok, source="ok")
+    assert pack.rules[0].match.arg == "^bedrock"  # type: ignore[union-attr]
+
+    bad = ok.replace('arg: "^bedrock"', 'arg: "[unclosed"')
+    with pytest.raises(TaxonomyError, match="invalid arg regex"):
+        parse_pack(bad, source="bad")
+
+
 def test_bad_regex_in_string_match_rejected() -> None:
     text = textwrap.dedent(
         """

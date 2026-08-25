@@ -57,6 +57,23 @@ def test_sentence_transformers_import_and_call(detector: PythonDetector) -> None
     assert {"sentence-transformers.import", "sentence-transformers.model"} <= ids
 
 
+def test_voyageai(detector: PythonDetector) -> None:
+    ids = _ids(detector, "import voyageai\nvo = voyageai.Client()\nM = 'voyage-3-large'")
+    assert {"voyageai.import", "voyageai.client", "voyageai.model-id"} <= ids
+
+
+def test_bedrock_arg_aware_match(detector: PythonDetector) -> None:
+    # Only a boto3 client for a Bedrock service counts as AI.
+    assert "aws-bedrock.client" in _ids(detector, 'import boto3\nboto3.client("bedrock-runtime")')
+    assert "aws-bedrock.client" in _ids(detector, 'import boto3\nboto3.client("bedrock")')
+
+
+def test_bedrock_does_not_fire_on_other_boto3_clients(detector: PythonDetector) -> None:
+    # boto3.client("s3") / a non-string arg must NOT be flagged (no false positive).
+    assert _ids(detector, 'import boto3\nboto3.client("s3")') == set()
+    assert _ids(detector, "import boto3\nsvc = 'bedrock-runtime'\nboto3.client(svc)") == set()
+
+
 def test_still_silent_on_non_ai(detector: PythonDetector) -> None:
     # Guard against the new rules widening into false positives.
     assert _ids(detector, "import os\nimport cohere_lookalike\nx = 'gemini valley'") == set()
