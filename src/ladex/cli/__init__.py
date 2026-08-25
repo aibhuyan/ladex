@@ -55,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
         return _policy_command(args[1:])
     if args[0] == "ci":
         return _ci_command(args[1:])
+    if args[0] == "diff":
+        return _diff_command(args[1:])
     if args[0] == "attest":
         return _attest_command(args[1:])
     if args[0] == "verify":
@@ -256,10 +258,11 @@ def _policy_check(args: list[str]) -> int:
 def _ci_command(args: list[str]) -> int:
     if args and args[0] in {"-h", "--help"}:
         print(
-            "usage: ladex ci [PATH] [--format text|markdown|json|github]\n"
+            "usage: ladex ci [PATH] [--base BASE_PATH] [--format text|markdown|json|github]\n"
             "                [--fail-on none|gaps|strict]\n"
             "                [--user-facing/--not-user-facing] "
-            "[--synthetic-content/--no-synthetic-content]",
+            "[--synthetic-content/--no-synthetic-content]\n"
+            "  --base: a checkout of the base branch, to report what this change adds/removes.",
             file=sys.stderr,
         )
         return 0
@@ -276,13 +279,21 @@ def _ci_command(args: list[str]) -> int:
 
     fmt = _flag_value(args, "--format") or "text"
     fail_on_raw = _flag_value(args, "--fail-on") or "gaps"
+    base_raw = _flag_value(args, "--base")
     try:
         fail_on = FailOn(fail_on_raw)
     except ValueError:
         print(f"invalid --fail-on {fail_on_raw!r}; choose none|gaps|strict", file=sys.stderr)
         return 2
 
-    consumed = {v for v in (fmt, fail_on_raw) if v}
+    base: Path | None = None
+    if base_raw is not None:
+        base = Path(base_raw)
+        if not base.exists():
+            print(f"--base path does not exist: {base}", file=sys.stderr)
+            return 2
+
+    consumed = {v for v in (fmt, fail_on_raw, base_raw) if v}
     positional = [a for a in args if not a.startswith("-") and a not in consumed]
     root = Path(positional[0]) if positional else Path(".")
     if not root.exists():
@@ -294,7 +305,7 @@ def _ci_command(args: list[str]) -> int:
         return 1
     assert isinstance(project, ProjectContext)
 
-    report = build_ci_report(root, project, fail_on=fail_on)
+    report = build_ci_report(root, project, fail_on=fail_on, base=base)
 
     if fmt == "json":
         print(json.dumps(ci_to_dict(report), indent=2))
@@ -311,6 +322,35 @@ def _ci_command(args: list[str]) -> int:
         render_ci(report)
 
     return 0 if report.passed else 1
+
+
+def _diff_command(args: list[str]) -> int:
+    if len(args) < 2 or args[0] in {"-h", "--help"}:
+        print("usage: ladex diff BASE_PATH HEAD_PATH [--json]", file=sys.stderr)
+        return 0 if args and args[0] in {"-h", "--help"} else 2
+    from ladex.engine.diff import diff_scans, render_diff_markdown
+    from ladex.engine.scan import scan_path
+
+    positional = [a for a in args if not a.startswith("-")]
+    base, head = Path(positional[0]), Path(positional[1])
+    for p in (base, head):
+        if not p.exists():
+            print(f"path does not exist: {p}", file=sys.stderr)
+            return 2
+    diff = diff_scans(scan_path(base), scan_path(head))
+    if "--json" in args:
+        print(
+            json.dumps(
+                {
+                    "added": [{"kind": c.kind, "label": c.label} for c in diff.added],
+                    "removed": [{"kind": c.kind, "label": c.label} for c in diff.removed],
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(render_diff_markdown(diff), end="")
+    return 0
 
 
 def _attest_command(args: list[str]) -> int:

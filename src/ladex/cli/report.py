@@ -220,6 +220,13 @@ def render_ci(report: CiReport, console: Console | None = None) -> None:
     if not report.gaps and not report.warnings:
         console.print("[dim]No open obligations or documentation gaps.[/dim]")
 
+    if report.diff is not None and report.diff.changed:
+        console.print("\n[bold]AI changes vs base[/bold]")
+        for c in report.diff.added:
+            console.print(f"  [green]+[/green] {escape(c.label)} [dim]({c.kind})[/dim]")
+        for c in report.diff.removed:
+            console.print(f"  [red]-[/red] {escape(c.label)} [dim]({c.kind})[/dim]")
+
 
 def emit_github_annotations(report: CiReport) -> None:
     """Print GitHub Actions workflow commands so gaps show inline on the PR."""
@@ -259,6 +266,14 @@ def ci_to_dict(report: CiReport) -> dict[str, Any]:
         ],
         "warnings": list(report.warnings),
         "summary": report.scan.counts_by_component_type(),
+        "diff": (
+            {
+                "added": [{"kind": c.kind, "label": c.label} for c in report.diff.added],
+                "removed": [{"kind": c.kind, "label": c.label} for c in report.diff.removed],
+            }
+            if report.diff is not None
+            else None
+        ),
     }
 
 

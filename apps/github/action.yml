@@ -23,6 +23,9 @@ inputs:
   ladex-version:
     description: "Pin a ladex version (e.g. 0.1.3). Empty installs the latest."
     default: ""
+  diff:
+    description: "On PRs, report which AI components this change adds/removes (vs the base branch)."
+    default: "true"
 
 runs:
   using: "composite"
@@ -55,6 +58,15 @@ runs:
           true) FLAGS="$FLAGS --synthetic-content" ;;
           false) FLAGS="$FLAGS --no-synthetic-content" ;;
         esac
+        # On a PR, check out the base branch so we can report the AI component delta.
+        if [ "${{ inputs.diff }}" = "true" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
+          if git -C "$GITHUB_WORKSPACE" fetch --depth=1 origin "${{ github.base_ref }}" \
+            && git -C "$GITHUB_WORKSPACE" worktree add --detach "$RUNNER_TEMP/ladex-base" FETCH_HEAD; then
+            FLAGS="$FLAGS --base $RUNNER_TEMP/ladex-base"
+          else
+            echo "::notice title=Ladex::could not check out base branch; skipping diff"
+          fi
+        fi
         # Gate run: annotations + job summary + real exit code.
         ladex ci "${{ inputs.path }}" --fail-on "${{ inputs.fail-on }}" --format github $FLAGS
         echo "exit=$?" >> "$GITHUB_OUTPUT"

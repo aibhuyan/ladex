@@ -130,6 +130,7 @@ Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 | `ladex scan PATH --write-bom [FILE]` | Write the deterministic CycloneDX ML-BOM (default `aibom.cdx.json`). |
 | `ladex scan PATH --json` | Machine-readable scan output. |
 | `ladex detect FILE.py` | Detect AI in a single file (`.py` or `.ipynb`). |
+| `ladex diff BASE HEAD` | Show AI components added/removed between two trees. |
 | `ladex policy init [PATH]` | Scaffold `.ladex/project.yaml` (declare your EU AI Act classification). |
 | `ladex policy check [PATH]` | Show applicable EU AI Act obligations and open gaps (`--json` for machine output). |
 | `ladex policy list` | List the loaded policy bundles and rules. |

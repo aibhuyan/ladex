@@ -37,6 +37,7 @@ jobs:
 | `synthetic-content` | `""` | `true` / `false` / `""` — declares whether it generates synthetic content (Art. 50(2)). |
 | `comment` | `true` | Post/update a sticky PR comment with the report. |
 | `ladex-version` | `""` | Pin a version (e.g. `0.1.3`); empty installs the latest from PyPI. |
+| `diff` | `true` | On PRs, report which AI components this change adds/removes vs the base branch. |
 
 ## What it does
 
