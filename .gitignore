@@ -7,6 +7,10 @@ build/
 dist/
 *.so
 
+# PyInstaller single-binary build outputs (artifacts go to GitHub Releases)
+dist-bin/
+build-bin/
+
 # Virtualenv / uv
 .venv/
 venv/

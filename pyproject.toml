@@ -49,6 +49,8 @@ dev = [
     # BOM schema validation in tests (pulls in jsonschema). Dev-only: the runtime never
     # validates, it only emits.
     "cyclonedx-python-lib[json-validation]>=8.0",
+    # Single-binary builds for CI and for bundling into the VS Code extension.
+    "pyinstaller>=6.0",
 ]
 
 [build-system]
