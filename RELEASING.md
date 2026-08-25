@@ -37,7 +37,7 @@ git push && git push origin v0.1.2
 ```
 
 The tag push triggers `release.yml`, which:
-1. builds `ladex-<ver>-{linux-x64,macos-x64,macos-arm64,windows-x64}` (smoke-tested),
+1. builds `ladex-<ver>-{linux-x64,macos-arm64,windows-x64}` (smoke-tested),
 2. builds `ladex-<ver>-py3-none-any.whl` + sdist,
 3. creates the **GitHub Release** with all of the above attached,
 4. publishes the wheel to **PyPI**.
@@ -50,6 +50,9 @@ GitHub Release **without** touching PyPI.
 
 ## Notes
 
+- **macOS binaries are Apple-Silicon (arm64) only.** Intel-Mac (x64) runners queue for a
+  long time on GitHub-hosted CI, so we don't build an Intel binary — Intel-Mac users install
+  the universal wheel via `pip install ladex` instead.
 - **macOS binaries are unsigned.** On first run users may need to right-click → Open, or
   `xattr -d com.apple.quarantine ladex-*-macos-*`. Signing needs an Apple Developer cert.
 - **Linux binary** targets the runner's glibc (Ubuntu). Very old distros may need the wheel.
