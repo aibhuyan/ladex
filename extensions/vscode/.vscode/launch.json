@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Ladex Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      // Load THIS extension and open the demo/ folder in the dev host window.
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}/demo"
+      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "preLaunchTask": "npm: compile",
+      // Put the project's virtualenv on PATH so the extension's default `ladex serve`
+      // resolves without a global install. Windows layout: <repo>/.venv/Scripts.
+      // (On macOS/Linux use ".venv/bin" and ":" as the separator.)
+      "env": {
+        "PATH": "${workspaceFolder}/../../.venv/Scripts;${env:PATH}"
+      }
+    }
+  ]
+}
