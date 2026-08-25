@@ -44,7 +44,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - uses: actions/setup-node@v5
@@ -94,12 +94,12 @@ jobs:
           mv "$SRC" "$OUT"
           echo "asset=$OUT" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: binary-${{ matrix.target }}
           path: ${{ steps.rn.outputs.asset }}
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: vsix-${{ matrix.vscode_target }}
           path: ladex-*-${{ matrix.vscode_target }}.vsix
@@ -124,7 +124,7 @@ jobs:
           npm ci
           npm version "$V" --no-git-tag-version --allow-same-version
           npx vsce package -o "$GITHUB_WORKSPACE/ladex-$V-universal.vsix"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: vsix-universal
           path: ladex-*-universal.vsix
@@ -135,11 +135,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: wheel
           path: dist/*
@@ -149,7 +149,7 @@ jobs:
     needs: [meta, binaries, vsix-universal, wheel]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
       - name: Collect assets
@@ -177,7 +177,7 @@ jobs:
     permissions:
       id-token: write # OIDC for PyPI Trusted Publishing (no token/secret needed)
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: wheel
           path: dist
@@ -196,7 +196,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           pattern: vsix-*
           path: vsix
