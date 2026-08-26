@@ -126,7 +126,13 @@ def render_enrichment(report: EnrichmentReport, console: Console | None = None) 
 
 
 def _render_package(pkg: EnrichedPackage) -> str:
-    version = f"[dim]{escape(pkg.pypi.version)}[/dim]" if pkg.pypi.version else "[dim]?[/dim]"
+    ev = pkg.effective_version
+    if ev:
+        pinned = pkg.resolved_version is not None
+        tag = ev if pinned else f"{ev} latest"
+        version = f"[dim]{escape(tag)}[/dim]"
+    else:
+        version = "[dim]?[/dim]"
     license_ = escape(pkg.pypi.license) if pkg.pypi.license else "[yellow]license unknown[/yellow]"
     if pkg.vulns:
         ids = ", ".join(escape(v.id) for v in pkg.vulns[:3])
@@ -330,7 +336,9 @@ def enrichment_to_dict(report: EnrichmentReport) -> dict[str, Any]:
             name: {
                 "name": pkg.name,
                 "status": pkg.pypi.status.value,
-                "version": pkg.pypi.version,
+                "version": pkg.effective_version,
+                "pypi_latest_version": pkg.pypi.version,
+                "version_source": pkg.version_source,
                 "license": pkg.pypi.license,
                 "vulns_status": pkg.vulns_status.value,
                 "vulns": [

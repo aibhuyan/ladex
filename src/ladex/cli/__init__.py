@@ -111,7 +111,7 @@ def _scan_command(args: list[str]) -> int:
     if do_enrich:
         from ladex.engine.enrich import enrich_scan
 
-        enrichment = enrich_scan(result, offline=offline, hf_token=hf_token)
+        enrichment = enrich_scan(result, offline=offline, hf_token=hf_token, root=root)
 
     if write_bom:
         from ladex.engine.attest import AttestationStore

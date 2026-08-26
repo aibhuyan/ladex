@@ -72,12 +72,24 @@ class ModelInfo:
 
 @dataclass(frozen=True, slots=True)
 class EnrichedPackage:
-    """A referenced package with its license and CVEs resolved."""
+    """A referenced package with its version, license, and CVEs resolved.
+
+    ``resolved_version`` is the version actually pinned in the project's lockfile (what ships);
+    CVEs are queried against it. When no lockfile pins it, we fall back to PyPI's latest and
+    say so via ``version_source`` — an honest "we couldn't pin this" rather than a wrong claim.
+    """
 
     name: str
     pypi: PyPIInfo
     vulns: tuple[Vuln, ...] = ()
     vulns_status: EnrichStatus = EnrichStatus.OFFLINE
+    resolved_version: str | None = None
+    version_source: str | None = None  # e.g. "uv.lock", "pypi-latest"
+
+    @property
+    def effective_version(self) -> str | None:
+        """The version CVEs/license describe — the pinned one if known, else PyPI latest."""
+        return self.resolved_version or self.pypi.version
 
 
 @dataclass(frozen=True, slots=True)

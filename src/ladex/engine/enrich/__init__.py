@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ladex.engine.enrich.cache import Cache, cached_json
 from ladex.engine.enrich.http import Fetcher, FetchResult, HttpFetcher
+from ladex.engine.enrich.lockfiles import normalize, resolve_versions
 from ladex.engine.enrich.models import (
     UNDOCUMENTED,
     EnrichedModel,
@@ -31,4 +32,6 @@ __all__ = [
     "Vuln",
     "cached_json",
     "enrich_scan",
+    "normalize",
+    "resolve_versions",
 ]

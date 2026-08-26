@@ -133,7 +133,7 @@ def _model_ids(result: ScanResult) -> list[str]:
 def _add_package_component(
     bom: Bom, dist: str, entry: _PackageEntry, enriched: EnrichedPackage | None
 ) -> None:
-    version = enriched.pypi.version if enriched else None
+    version = enriched.effective_version if enriched else None
     bom_ref = f"pkg:pypi/{dist}" + (f"@{version}" if version else "")
     comp = Component(
         name=dist,
