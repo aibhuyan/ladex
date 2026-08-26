@@ -47,6 +47,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: ${{ matrix.target }}
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
@@ -94,12 +95,12 @@ jobs:
           mv "$SRC" "$OUT"
           echo "asset=$OUT" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: binary-${{ matrix.target }}
           path: ${{ steps.rn.outputs.asset }}
           if-no-files-found: error
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: vsix-${{ matrix.vscode_target }}
           path: ladex-*-${{ matrix.vscode_target }}.vsix
@@ -124,7 +125,7 @@ jobs:
           npm ci
           npm version "$V" --no-git-tag-version --allow-same-version
           npx vsce package -o "$GITHUB_WORKSPACE/ladex-$V-universal.vsix"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: vsix-universal
           path: ladex-*-universal.vsix
@@ -138,8 +139,9 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          cache-suffix: wheel
       - run: uv build
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: wheel
           path: dist/*
@@ -149,7 +151,7 @@ jobs:
     needs: [meta, binaries, vsix-universal, wheel]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           path: artifacts
       - name: Collect assets
@@ -177,7 +179,7 @@ jobs:
     permissions:
       id-token: write # OIDC for PyPI Trusted Publishing (no token/secret needed)
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: wheel
           path: dist
@@ -196,7 +198,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           pattern: vsix-*
           path: vsix
