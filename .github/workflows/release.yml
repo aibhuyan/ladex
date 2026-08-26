@@ -169,9 +169,9 @@ jobs:
           generate_release_notes: true
 
   pypi-publish:
-    # Only publish to PyPI on a real tag push (never on manual dispatch / backfill).
+    # Publish to PyPI whenever running on a tag ref (tag push, or a manual run against a tag).
     needs: [meta, wheel]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -187,10 +187,10 @@ jobs:
 
   marketplace-publish:
     # Publish every platform VSIX to the VS Code Marketplace on a real tag push only
-    # (manual dispatch/backfill must not re-publish an existing version). Requires the
+    # A manual run against a tag also publishes; a branch backfill (refs/heads/*) does not. Needs
     # `VSCE_PAT` repo secret (Azure DevOps PAT, Marketplace: Manage, all orgs).
     needs: [meta, binaries, vsix-universal]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v5
