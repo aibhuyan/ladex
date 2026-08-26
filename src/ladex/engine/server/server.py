@@ -16,13 +16,22 @@ from pygls.uris import to_fs_path
 
 from ladex import __version__
 from ladex.engine.detect import PythonDetector
-from ladex.engine.server.diagnostics import build_diagnostics, code_actions
+from ladex.engine.server.diagnostics import (
+    DEFAULT_MODE,
+    DiagnosticsMode,
+    build_diagnostics,
+    code_actions,
+)
 
 SERVER_NAME = "ladex-lsp"
 
 
-def create_server() -> LanguageServer:
-    """Build a configured Ladex language server (not yet started)."""
+def create_server(mode: DiagnosticsMode = DEFAULT_MODE) -> LanguageServer:
+    """Build a configured Ladex language server (not yet started).
+
+    ``mode`` sets the editor noise floor (see :data:`DiagnosticsMode`); the VS Code client
+    passes it from the ``ladex.diagnostics`` setting via ``ladex serve --diagnostics``.
+    """
     server = LanguageServer(SERVER_NAME, __version__)
     # One detector for the server's lifetime — the taxonomy is loaded once.
     detector = PythonDetector()
@@ -35,7 +44,7 @@ def create_server() -> LanguageServer:
         return Path(fs) if fs else None
 
     def _publish(ls: LanguageServer, uri: str, text: str) -> None:
-        diagnostics = build_diagnostics(text, detector, _root(ls))
+        diagnostics = build_diagnostics(text, detector, _root(ls), mode)
         ls.text_document_publish_diagnostics(
             types.PublishDiagnosticsParams(uri=uri, diagnostics=diagnostics)
         )
@@ -62,6 +71,6 @@ def create_server() -> LanguageServer:
     return server
 
 
-def start_stdio() -> None:
+def start_stdio(mode: DiagnosticsMode = DEFAULT_MODE) -> None:
     """Run the server over stdio (how the VS Code client launches it)."""
-    create_server().start_io()
+    create_server(mode).start_io()

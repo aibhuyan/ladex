@@ -26,6 +26,17 @@ interface Server {
   bundled: boolean;
 }
 
+// Append `--diagnostics <mode>` from the `ladex.diagnostics` setting, unless the user already
+// pinned it in serverArgs. Controls the editor noise floor: "actionable" (default) squiggles
+// only what needs a human, "all" also shows the inventory faintly, "off" disables diagnostics.
+function withDiagnostics(args: string[]): string[] {
+  if (args.some((a) => a === "--diagnostics")) {
+    return args;
+  }
+  const mode = vscode.workspace.getConfiguration("ladex").get<string>("diagnostics", "actionable");
+  return [...args, "--diagnostics", mode];
+}
+
 function resolveServer(context: vscode.ExtensionContext): Server {
   const config = vscode.workspace.getConfiguration("ladex");
   const configured = (config.get<string>("serverCommand", "ladex") || "ladex").trim();
@@ -33,7 +44,7 @@ function resolveServer(context: vscode.ExtensionContext): Server {
 
   // 1. An explicit, non-default serverCommand always wins.
   if (configured && configured !== "ladex") {
-    return { command: configured, args: configuredArgs, bundled: false };
+    return { command: configured, args: withDiagnostics(configuredArgs), bundled: false };
   }
 
   // 2. A binary bundled with this (platform-specific) build.
@@ -41,11 +52,11 @@ function resolveServer(context: vscode.ExtensionContext): Server {
   const bundled = context.asAbsolutePath(path.join("bin", exe));
   if (fs.existsSync(bundled)) {
     ensureRunnable(bundled);
-    return { command: bundled, args: ["serve"], bundled: true };
+    return { command: bundled, args: withDiagnostics(["serve"]), bundled: true };
   }
 
   // 3. Fall back to a `ladex` on PATH.
-  return { command: configured, args: configuredArgs, bundled: false };
+  return { command: configured, args: withDiagnostics(configuredArgs), bundled: false };
 }
 
 /** Make a bundled binary executable, and clear macOS quarantine so Gatekeeper won't block it. */
@@ -67,7 +78,7 @@ function ensureRunnable(bin: string): void {
   }
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+function startClient(context: vscode.ExtensionContext): Server {
   const server = resolveServer(context);
   const serverOptions: ServerOptions = {
     run: { command: server.command, args: server.args, transport: TransportKind.stdio },
@@ -87,10 +98,30 @@ export function activate(context: vscode.ExtensionContext): void {
       : `install the ladex CLI (pip install ladex) or set 'ladex.serverCommand' — tried '${server.command}'`;
     void vscode.window.showErrorMessage(`Ladex: could not start the engine — ${hint}. (${String(err)})`);
   });
+  return server;
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+  let server = startClient(context);
 
   // The "attest" quick-fix (code action) runs `ladex attest` after prompting for the details.
+  // Read `server` lazily so it always points at the current (possibly restarted) engine.
   context.subscriptions.push(
     vscode.commands.registerCommand("ladex.attest", (arg: AttestArg) => attest(server, arg)),
+  );
+
+  // Restart the engine when any `ladex.*` setting changes, so e.g. flipping the noise floor
+  // (`ladex.diagnostics`) takes effect immediately rather than after a window reload.
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (!e.affectsConfiguration("ladex")) {
+        return;
+      }
+      void (async () => {
+        await client?.stop();
+        server = startClient(context);
+      })();
+    }),
   );
 
   context.subscriptions.push({

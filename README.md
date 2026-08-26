@@ -8,12 +8,12 @@
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.1-3b82f6?style=flat" alt="version 0.2.1">
+  <img src="https://img.shields.io/badge/version-0.2.2-3b82f6?style=flat" alt="version 0.2.2">
   <img src="https://img.shields.io/github/actions/workflow/status/aibhuyan/ladex/ci.yml?branch=main&style=flat&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">
-  <img src="https://img.shields.io/badge/tests-206%20passing-22c55e?style=flat" alt="tests 206 passing">
+  <img src="https://img.shields.io/badge/tests-224%20passing-22c55e?style=flat" alt="tests 224 passing">
   <img src="https://img.shields.io/badge/output-CycloneDX%20ML--BOM-3b82f6?style=flat" alt="CycloneDX ML-BOM">
   <img src="https://img.shields.io/badge/EU%20AI%20Act-Art.%205%2F50%2F53%20%2B%20Annex%20III-3b82f6?style=flat" alt="EU AI Act coverage">
 </p>
@@ -70,7 +70,7 @@ running the gate are CLI actions** — so if you want those, install the CLI.
 
 ```bash
 uv tool install ladex      # isolated + on your PATH (recommended)
-ladex --version            # -> ladex 0.2.1
+ladex --version            # -> ladex 0.2.2
 ```
 
 > **Tip:** install it as a *tool* (`uv tool` / `pipx`), not with a plain global `pip install` —
@@ -82,6 +82,9 @@ ladex --version            # -> ladex 0.2.1
 ## Quickstart
 
 ```bash
+# One-time setup: scaffold .ladex/project.yaml + the PR-check workflow
+ladex init path/to/repo
+
 # See every AI component in a repo (silent on non-AI code)
 ladex scan path/to/repo
 
@@ -125,6 +128,7 @@ Summary: 3 detection(s) across 2 of 2 file(s) scanned.
 | Command | What it does |
 | --- | --- |
 | `ladex --version` | Print the installed version. |
+| `ladex init [PATH]` | One-shot setup: scaffold `.ladex/project.yaml` **and** `.github/workflows/ladex.yml` (never overwrites). |
 | `ladex scan [PATH]` | Detect AI components across a tree (Python + Jupyter notebooks + Terraform + Kubernetes). Silent on non-AI code. |
 | `ladex scan PATH --enrich` | Add licenses (PyPI), CVEs (OSV), and model cards (HF). `--offline` uses the cache. |
 | `ladex scan PATH --write-bom [FILE]` | Write the deterministic CycloneDX ML-BOM (default `aibom.cdx.json`). |
@@ -149,6 +153,8 @@ The GitHub Action runs the same engine as a **merge gate**: it detects AI added 
 records its EU AI Act obligations, and **fails the check on undocumented provenance** — with a
 sticky comment showing exactly which `ladex attest` command closes each gap.
 
+`ladex init` writes this file for you; here it is if you'd rather add it by hand:
+
 ```yaml
 # .github/workflows/ladex.yml
 on: pull_request
@@ -158,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: aibhuyan/ladex/apps/github@v0.2.1
+      - uses: aibhuyan/ladex/apps/github@v0.2.2
         with: { fail-on: gaps }
 ```
 
@@ -178,8 +184,11 @@ platform builds **bundle the engine**, so it's a single install with no separate
   (`ladex-<version>-{win32-x64,darwin-arm64,linux-x64}.vsix`) → Extensions panel →
   **Install from VSIX…**.
 
-Then open any Python file that uses an AI library. See
-[`extensions/vscode/README.md`](extensions/vscode/README.md) for configuration and development.
+Then open any Python file that uses an AI library. By default the editor is **quiet** — it
+underlines only what needs a human (a loadable model with unattested provenance/consent), not
+every AI import. Set `ladex.diagnostics` to `all` to see the full inventory as faint hints, or
+`off` to silence it. See [`extensions/vscode/README.md`](extensions/vscode/README.md) for all
+configuration and development.
 
 ## Extending Ladex (custom packs)
 

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/aibhuyan/ladex/main/assets/ladex-social-card.png" alt="Ladex — a bill of lading for AI" width="640">
+</p>
+
 # Ladex for VS Code
 
 Flags AI components inline as you edit Python — inference APIs, models, agent frameworks,
@@ -30,6 +34,7 @@ Open any Python file that uses an AI library — diagnostics appear as you type.
 | --- | --- | --- |
 | `ladex.serverCommand` | `ladex` | Overrides the engine command. Leave as `ladex` to use the bundled binary (falling back to a `ladex` on PATH); set a full path to force a specific engine. |
 | `ladex.serverArgs` | `["serve"]` | Arguments passed to the engine command. |
+| `ladex.diagnostics` | `actionable` | Editor noise floor. `actionable` underlines only what needs a human — a loadable model with unattested provenance/consent — and stays silent on ordinary AI imports/calls. `all` also shows the full inventory as faint hints. `off` disables diagnostics. Changing it restarts the engine automatically. |
 
 The extension resolves the engine in this order: an explicit non-default `serverCommand` →
 the **bundled binary** (`bin/ladex`) → a `ladex` on your PATH. If it can't start any, it shows

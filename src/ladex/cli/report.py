@@ -52,10 +52,23 @@ def render_scan(result: ScanResult, console: Console | None = None) -> None:
 
     for path, dets in result.detections_by_file().items():
         console.print(f"\n[bold]{escape(_relativize(path, result.root))}[/bold]")
-        for det in dets:
-            console.print("  " + _render_row(det, rule_w, type_w))
+        for det, count in _dedupe(dets):
+            console.print("  " + _render_row(det, rule_w, type_w, count))
 
     _render_summary(result, console)
+
+
+def _dedupe(dets: list[Detection]) -> list[tuple[Detection, int]]:
+    """Collapse repeats of the same (rule, evidence) within a file, keeping the first hit
+    and a count — so a model id used 100 times shows one row with ×100, not 100 rows."""
+    first: dict[tuple[str, str], Detection] = {}
+    counts: dict[tuple[str, str], int] = {}
+    for det in dets:
+        key = (det.rule_id, det.evidence)
+        if key not in first:
+            first[key] = det
+        counts[key] = counts.get(key, 0) + 1
+    return [(first[k], counts[k]) for k in first]
 
 
 _SEVERITY_STYLE: dict[str, str] = {
@@ -66,25 +79,27 @@ _SEVERITY_STYLE: dict[str, str] = {
 }
 
 
-def _render_row(det: Detection, rule_w: int, type_w: int) -> str:
+def _render_row(det: Detection, rule_w: int, type_w: int, count: int = 1) -> str:
     loc = f"{det.span.start_line}:{det.span.start_col + 1}"
     if det.cell is not None:
         loc = f"c{det.cell}:{loc}"
     style = _TYPE_STYLE.get(det.component_type.value, "white")
     type_cell = f"{det.component_type.value:<{type_w}}"
     rule_cell = f"{det.rule_id:<{rule_w}}"
-    evidence = escape(_truncate(det.evidence, _EVIDENCE_MAX))
-    if det.severity:  # IaC finding — lead with the severity badge and show the finding text
+    times = f" [dim]x{count}[/dim]" if count > 1 else ""
+    if det.severity:  # IaC finding: lead with the severity badge and show the finding text
         sev_style = _SEVERITY_STYLE.get(det.severity, "white")
         tail = f"{escape(det.evidence)} [dim]- {escape(_truncate(det.name, 60))}[/dim]"
+        badge = f"[{sev_style}]{det.severity.upper()}[/{sev_style}]"
         return (
             f"[dim]{loc:>7}[/dim]  [{style}]{type_cell}[/{style}]  "
-            f"[bold]{rule_cell}[/bold]  [{sev_style}]{det.severity.upper()}[/{sev_style}] {tail}"
+            f"[bold]{rule_cell}[/bold]  {badge} {tail}{times}"
         )
     provider = f" [dim]({escape(det.provider)})[/dim]" if det.provider else ""
+    evidence = escape(_truncate(det.evidence, _EVIDENCE_MAX))
     return (
         f"[dim]{loc:>7}[/dim]  [{style}]{type_cell}[/{style}]  "
-        f"[bold]{rule_cell}[/bold]  {evidence}{provider}"
+        f"[bold]{rule_cell}[/bold]  {evidence}{provider}{times}"
     )
 
 

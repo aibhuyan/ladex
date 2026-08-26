@@ -75,8 +75,7 @@ def load_builtin_bundles() -> list[PolicyBundle]:
         bundle = parse_bundle(res.read_text(encoding="utf-8"), source=res.name)
         if bundle.id in seen:
             raise PolicyError(
-                f"duplicate bundle id {bundle.id!r} in {res.name}; "
-                f"first seen in {seen[bundle.id]}"
+                f"duplicate bundle id {bundle.id!r} in {res.name}; first seen in {seen[bundle.id]}"
             )
         seen[bundle.id] = res.name
         bundles.append(bundle)

@@ -49,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     if args[0] in _VERSION_FLAGS:
         print(f"ladex {__version__}")
         return 0
+    if args[0] == "init":
+        return _init_command(args[1:])
     if args[0] == "scan":
         return _scan_command(args[1:])
     if args[0] == "policy":
@@ -74,7 +76,60 @@ def main(argv: list[str] | None = None) -> int:
 
 def _print_banner() -> None:
     print(f"ladex {__version__} - a bill of lading for AI")
-    print("Commands: `ladex scan [PATH]`, `ladex detect FILE`, `ladex taxonomy list`.")
+    print("Commands: `ladex init`, `ladex scan [PATH]`, `ladex ci`, `ladex taxonomy list`.")
+
+
+def _ci_workflow(version: str) -> str:
+    return (
+        "# Ladex AI-governance gate — created by `ladex init`.\n"
+        "name: Ladex\n"
+        "on: pull_request\n"
+        "permissions:\n"
+        "  contents: read\n"
+        "  pull-requests: write\n"
+        "jobs:\n"
+        "  ladex:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - uses: actions/checkout@v5\n"
+        f"      - uses: aibhuyan/ladex/apps/github@v{version}\n"
+        "        with:\n"
+        "          fail-on: gaps\n"
+    )
+
+
+def _init_command(args: list[str]) -> int:
+    if args and args[0] in {"-h", "--help"}:
+        print("usage: ladex init [PATH]", file=sys.stderr)
+        return 0
+    from ladex.engine.policy import PROJECT_FILE, project_template
+
+    positional = [a for a in args if not a.startswith("-")]
+    root = Path(positional[0]) if positional else Path(".")
+
+    wrote: list[str] = []
+    skipped: list[str] = []
+    for rel, content in (
+        (PROJECT_FILE, project_template()),
+        (".github/workflows/ladex.yml", _ci_workflow(__version__)),
+    ):
+        target = root / rel
+        if target.exists():
+            skipped.append(rel)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        wrote.append(rel)
+
+    for rel in wrote:
+        print(f"created {rel}")
+    for rel in skipped:
+        print(f"kept existing {rel}")
+    if wrote:
+        print("")
+        print("Next: edit .ladex/project.yaml to declare your EU AI Act")
+        print("classification, then commit both files.")
+    return 0
 
 
 def _scan_command(args: list[str]) -> int:
@@ -451,11 +506,24 @@ def _verify_command(args: list[str]) -> int:
 
 def _serve_command(args: list[str]) -> int:
     if args and args[0] in {"-h", "--help"}:
-        print("usage: ladex serve   (runs the LSP server over stdio)", file=sys.stderr)
+        print(
+            "usage: ladex serve [--diagnostics actionable|all|off]\n"
+            "  runs the LSP server over stdio (the VS Code extension launches this)\n"
+            "  --diagnostics  editor noise floor (default: actionable)",
+            file=sys.stderr,
+        )
         return 0
     from ladex.engine.server import start_stdio
+    from ladex.engine.server.diagnostics import DEFAULT_MODE
 
-    start_stdio()
+    mode = _flag_value(args, "--diagnostics") or DEFAULT_MODE
+    if mode not in {"actionable", "all", "off"}:
+        print(
+            f"invalid --diagnostics {mode!r} (want: actionable|all|off)",
+            file=sys.stderr,
+        )
+        return 2
+    start_stdio(mode)  # type: ignore[arg-type]
     return 0
 
 

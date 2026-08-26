@@ -6,6 +6,10 @@
   "publisher": "ladex",
   "license": "MIT",
   "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#0f766e",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/aibhuyan/ladex"
@@ -55,6 +59,21 @@
           "type": "string",
           "default": "",
           "description": "Name/email recorded as the attester for the 'attest' quick-fix. Empty prompts each time."
+        },
+        "ladex.diagnostics": {
+          "type": "string",
+          "enum": [
+            "actionable",
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Only flag AI that needs a human decision (a loadable model with unattested provenance/consent). Ordinary AI imports and calls stay silent.",
+            "Also surface the full AI inventory, shown as faint hints so the actionable items still stand out.",
+            "Disable Ladex diagnostics entirely."
+          ],
+          "default": "actionable",
+          "description": "How much Ladex underlines in the editor. 'actionable' keeps it quiet and only speaks up where you must sign something."
         }
       }
     }

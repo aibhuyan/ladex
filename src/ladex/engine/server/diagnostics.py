@@ -12,7 +12,7 @@ provenance/consent has a verified attestation stops nagging, and unresolved ones
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from lsprotocol import types
 
@@ -24,6 +24,14 @@ from ladex.engine.taxonomy.models import ComponentType
 _SOURCE = "ladex"
 ATTEST_COMMAND = "ladex.attest"
 _MODEL_CLAIMS = ("provenance", "consent_basis")
+
+#: How much the editor should say. ``actionable`` (default) underlines ONLY detections a human
+#: must act on (a loadable model with unattested provenance/consent) — ordinary AI imports and
+#: calls stay silent, honouring "ruthless silence" in the editor. ``all`` also surfaces the full
+#: inventory, but demoted to a faint ``Hint`` so the actionable squiggles still stand out.
+#: ``off`` disables diagnostics entirely.
+DiagnosticsMode = Literal["actionable", "all", "off"]
+DEFAULT_MODE: DiagnosticsMode = "actionable"
 
 _OBLIGATION_HINT: dict[ComponentType, str] = {
     ComponentType.INFERENCE_API: "EU AI Act Art. 50 disclosure may apply if user-facing",
@@ -53,22 +61,55 @@ def _unresolved_claims(det: Detection, verified: set[tuple[str, str]]) -> list[s
     return [c for c in _MODEL_CLAIMS if (det.evidence, c) not in verified]
 
 
+def _is_actionable(d: Detection, verified: set[tuple[str, str]]) -> bool:
+    """True when a human still has to do something about this detection here and now:
+    a loadable model with a provenance/consent claim not yet attested. Everything else is
+    inventory — real AI cargo worth recording in the BOM, but nothing to act on in the editor."""
+    return _is_attestable_model(d) and bool(_unresolved_claims(d, verified))
+
+
 def build_diagnostics(
-    text: str, detector: PythonDetector | None = None, root: Path | None = None
+    text: str,
+    detector: PythonDetector | None = None,
+    root: Path | None = None,
+    mode: DiagnosticsMode = DEFAULT_MODE,
 ) -> list[types.Diagnostic]:
-    """Detect AI components in ``text`` and return them as LSP diagnostics."""
+    """Detect AI components in ``text`` and return them as LSP diagnostics.
+
+    ``mode`` controls the editor's noise floor (see :data:`DiagnosticsMode`). Repeats of the
+    same (rule, evidence) within the file collapse to their first occurrence — attesting a
+    model resolves every use of it at once, so one squiggle per unique component is enough.
+    """
+    if mode == "off":
+        return []
     det = detector if detector is not None else PythonDetector()
     verified = _verified_claims(root)
-    return [_to_diagnostic(d, verified) for d in det.detect_source(text)]
+    diagnostics: list[types.Diagnostic] = []
+    seen: set[tuple[str, str]] = set()
+    for d in det.detect_source(text):
+        actionable = _is_actionable(d, verified)
+        if mode == "actionable" and not actionable:
+            continue
+        key = (d.rule_id, d.evidence)
+        if key in seen:
+            continue
+        seen.add(key)
+        diagnostics.append(_to_diagnostic(d, verified, actionable=actionable))
+    return diagnostics
 
 
-def _to_diagnostic(d: Detection, verified: set[tuple[str, str]]) -> types.Diagnostic:
+def _to_diagnostic(
+    d: Detection, verified: set[tuple[str, str]], *, actionable: bool
+) -> types.Diagnostic:
     start = types.Position(line=d.span.start_line - 1, character=d.span.start_col)
     end = types.Position(line=d.span.end_line - 1, character=d.span.end_col)
+    # Actionable items ask for a decision -> Information (visible, carries the quick-fix).
+    # Inventory is demoted to Hint -> a faint marker VS Code keeps out of the Problems noise.
+    severity = types.DiagnosticSeverity.Information if actionable else types.DiagnosticSeverity.Hint
     return types.Diagnostic(
         range=types.Range(start=start, end=end),
         message=_message(d, verified),
-        severity=types.DiagnosticSeverity.Information,
+        severity=severity,
         source=_SOURCE,
         code=d.rule_id,
     )

@@ -59,18 +59,28 @@ def test_attestation_removes_the_action(tmp_path: Path) -> None:
     assert actions == []  # both claims attested -> nothing left to fix
 
 
-def test_diagnostic_message_reflects_attestation(tmp_path: Path) -> None:
+def test_unattested_model_surfaces_with_attestation_ask(tmp_path: Path) -> None:
+    # Default mode: the unattested loadable model is the one thing that speaks up.
     unattested = build_diagnostics(_src())
     model_diag = next(d for d in unattested if d.code == "huggingface.sentence-transformers-id")
     assert "need attestation" in model_diag.message
 
+
+def test_attestation_silences_the_model_in_default_mode(tmp_path: Path) -> None:
     signer = LocalSigner(key_path=tmp_path / "key")
     store = AttestationStore.for_root(tmp_path)
     for claim in ("provenance", "consent_basis"):
         store.add(create_attestation(MODEL, claim, "public data", "me@org", signer))
+
+    # Once signed, there's nothing left to act on -> the squiggle disappears (default mode).
     attested = build_diagnostics(_src(), root=tmp_path)
-    model_diag = next(d for d in attested if d.code == "huggingface.sentence-transformers-id")
+    assert not any(d.code == "huggingface.sentence-transformers-id" for d in attested)
+
+    # In 'all' mode it's still inventory, now confirmed as attested.
+    shown = build_diagnostics(_src(), root=tmp_path, mode="all")
+    model_diag = next(d for d in shown if d.code == "huggingface.sentence-transformers-id")
     assert "attested" in model_diag.message
+    assert model_diag.severity is types.DiagnosticSeverity.Hint
 
 
 def test_selection_narrows_actions() -> None:
