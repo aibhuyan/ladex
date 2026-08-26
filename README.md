@@ -8,12 +8,12 @@
 <p align="center"><strong>A bill of lading for AI.</strong></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-3b82f6?style=flat" alt="version 0.2.0">
+  <img src="https://img.shields.io/badge/version-0.2.1-3b82f6?style=flat" alt="version 0.2.1">
   <img src="https://img.shields.io/github/actions/workflow/status/aibhuyan/ladex/ci.yml?branch=main&style=flat&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/stars/aibhuyan/ladex?style=flat&color=3b82f6" alt="GitHub stars">
   <img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat" alt="license MIT">
   <img src="https://img.shields.io/badge/python-3.12+-3b82f6?style=flat" alt="python 3.12+">
-  <img src="https://img.shields.io/badge/tests-178%20passing-22c55e?style=flat" alt="tests 178 passing">
+  <img src="https://img.shields.io/badge/tests-206%20passing-22c55e?style=flat" alt="tests 206 passing">
   <img src="https://img.shields.io/badge/output-CycloneDX%20ML--BOM-3b82f6?style=flat" alt="CycloneDX ML-BOM">
   <img src="https://img.shields.io/badge/EU%20AI%20Act-Art.%205%2F50%2F53%20%2B%20Annex%20III-3b82f6?style=flat" alt="EU AI Act coverage">
 </p>
@@ -70,7 +70,7 @@ running the gate are CLI actions** — so if you want those, install the CLI.
 
 ```bash
 uv tool install ladex      # isolated + on your PATH (recommended)
-ladex --version            # -> ladex 0.2.0
+ladex --version            # -> ladex 0.2.1
 ```
 
 > **Tip:** install it as a *tool* (`uv tool` / `pipx`), not with a plain global `pip install` —
@@ -158,7 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: aibhuyan/ladex/apps/github@v0.2.0
+      - uses: aibhuyan/ladex/apps/github@v0.2.1
         with: { fail-on: gaps }
 ```
 
